@@ -39,6 +39,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <button class="tab active" data-tab="home">نمای کلی</button>
 <button class="tab" data-tab="tanks">مخازن</button>
 <button class="tab" data-tab="records">سوابق فنی</button>
+<button class="tab" data-tab="globalSearch">جست‌وجوی سراسری</button>
 <button class="tab" data-tab="tankReports">گزارش مخازن</button>
 <button class="tab" data-tab="backup">پشتیبان</button>
 </div>
@@ -80,6 +81,15 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 </form></div>
 <div class="card"><h2>سوابق ثبت‌شده</h2><input id="recordSearch" placeholder="جست‌وجوی مخزن، تگ یا متن سابقه…" autocomplete="off">
 <div class="row"><div><label for="recordTankFilter">فیلتر مخزن</label><select id="recordTankFilter"><option value="">همه مخازن</option></select></div><div><label for="recordTypeFilter">فیلتر نوع سابقه</label><select id="recordTypeFilter"><option value="">همه انواع سوابق</option></select></div></div><div id="recordList"></div></div>
+</section>
+<section id="globalSearch" class="hidden">
+<div class="card"><h2>جست‌وجوی سراسری مخازن و سوابق</h2>
+<p class="muted">تگ مخزن یا تجهیز، عنوان سابقه، شرح کار، نوع سابقه، تاریخ، محل و مشخصات فنی را جست‌وجو کنید. اگر تگ تجهیز در مشخصات مخزن ثبت شده باشد، سوابق همان مخزن هم نمایش داده می‌شود.</p>
+<label for="globalSearchInput">عبارت جست‌وجو</label><input id="globalSearchInput" type="search" placeholder="مثلاً TK-2011B یا LT-2011B یا کالیبراسیون…" autocomplete="off" autocapitalize="off" spellcheck="false">
+<div class="actions"><button class="secondary" type="button" id="globalSearchClear">پاک کردن جست‌وجو</button><span class="muted" id="globalSearchSummary" aria-live="polite">برای شروع، عبارت موردنظر را وارد کنید.</span></div>
+</div>
+<div class="card"><h2>مخازن و تجهیزات مرتبط</h2><div id="globalTankResults"><p class="muted">نتیجه‌ای برای نمایش نیست.</p></div></div>
+<div class="card"><h2>سوابق فنی مرتبط</h2><div id="globalRecordResults"><p class="muted">نتیجه‌ای برای نمایش نیست.</p></div></div>
 </section>
 <section id="tankReports" class="hidden">
 <div class="card"><h2>گزارش مخازن</h2><p class="muted">مخزن را از فهرست مرتب‌شده انتخاب کنید تا سوابق همان مخزن به ترتیب تاریخ نمایش داده شوند.</p><input id="reportTankSearch" placeholder="جست‌وجوی مخزن…" autocomplete="off"><div id="reportTankList"></div></div>
@@ -134,6 +144,18 @@ function syncAntennaFields(){const isWell=$('antennaType').value==='Stilling Wel
 $('antennaType').addEventListener('change',syncAntennaFields);syncAntennaFields();
 function tab(name){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));$(name).classList.remove('hidden');document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));render()}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>tab(b.dataset.tab)));
+function normalizeSearchText(value){return String(value??'').toLocaleLowerCase().replace(/[ي]/g,'ی').replace(/[ك]/g,'ک').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/\s+/g,' ').trim()}
+function renderGlobalSearch(){
+ const input=$('globalSearchInput'); if(!input)return;
+ const raw=input.value||'', q=normalizeSearchText(raw);
+ const tankText=t=>[t.tag,t.type,t.location,t.equipment,t.notes,t.antennaType,t.status,statusLabel(t.status),t.upperReferencePosition,t.tankBottomPosition,t.maximumSafeFill,t.offsetToRoof,t.nozzleLength,t.stillingWellDiameter,t.referenceInnage,t.referenceUllage,t.acceptReference,t.acceptReferenceStatus].join(' ');
+ const matchingTanks=q?db.tanks.filter(t=>normalizeSearchText(tankText(t)).includes(q)):[];
+ const matchingTankIds=new Set(matchingTanks.map(t=>t.id));
+ const records=q?db.records.filter(r=>{const direct=normalizeSearchText([tankName(r.tankId),r.tag,r.type,r.title,r.text,r.date,formatDate(r.date)].join(' ')).includes(q);return direct||matchingTankIds.has(r.tankId)}).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')):[];
+ $('globalSearchSummary').textContent=q?`${matchingTanks.length} مخزن/تجهیز و ${records.length} سابقه مرتبط پیدا شد.`:'برای شروع، عبارت موردنظر را وارد کنید.';
+ $('globalTankResults').innerHTML=!q?'<p class="muted">عبارت جست‌وجو را وارد کنید.</p>':matchingTanks.length?matchingTanks.map(t=>`<div class="item"><div class="itemtop"><h3 class="tag">${safe(t.tag)}</h3><span class="status-badge ${statusClass(t.status)}">${safe(statusLabel(t.status))}</span></div><p class="muted">${safe(t.location||'محل ثبت نشده')} · ${db.records.filter(r=>r.tankId===t.id).length} سابقه</p>${t.equipment?`<p><b>تجهیزات مرتبط:</b> ${safe(t.equipment)}</p>`:''}${t.antennaType?`<p><b>نوع آنتن:</b> ${safe(t.antennaType)}</p>`:''}<div class="actions"><button class="secondary" type="button" data-global-edit-tank="${safe(t.id)}">مشاهده / ویرایش مخزن</button><button class="secondary" type="button" data-global-add-record="${safe(t.id)}">ثبت سابقه</button><button class="secondary" type="button" data-global-tank-records="${safe(t.id)}">نمایش سوابق این مخزن</button></div></div>`).join(''):'<p class="muted">مخزن یا تجهیزی مطابق عبارت پیدا نشد.</p>';
+ $('globalRecordResults').innerHTML=!q?'<p class="muted">عبارت جست‌وجو را وارد کنید.</p>':records.length?records.map(r=>`<div class="item"><div class="itemtop"><h3>${safe(r.title||'بدون عنوان')}</h3><span class="tag">${safe(r.tag||'بدون تگ')}</span></div><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))}</p><p><b>نوع سابقه:</b> ${safe(r.type||'دسته‌بندی نشده')}</p><p>${safe(r.text||'بدون شرح تکمیلی')}</p><div class="actions"><button class="secondary" type="button" data-global-edit-record="${safe(r.id)}">ویرایش سابقه</button><button class="secondary" type="button" data-global-open-tank-report="${safe(r.tankId)}">گزارش این مخزن</button></div></div>`).join(''):'<p class="muted">سابقه‌ای مطابق عبارت پیدا نشد.</p>';
+}
 function renderTankReports(){
  const q=($('reportTankSearch')?.value||'').toLowerCase();
  const tanks=db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag));
@@ -176,14 +198,21 @@ $('recordList').innerHTML=recs.length?recs.map(recHtml).join(''):'<p class="mute
 $('recent').innerHTML=db.records.length?db.records.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4).map(r=>`<button type="button" class="item recent-link" data-open-record="${safe(r.id)}" style="display:block;width:100%;text-align:right;color:inherit;font:inherit"><b>${safe(r.title)}</b><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))} · ${safe(r.type||'دسته‌بندی نشده')}</p><p>${safe(r.text||'')}</p><span class="muted">برای مشاهده سابقه بزنید ←</span></button>`).join(''):'<p class="muted">برای شروع، یک مخزن ثبت کنید و سپس سابقه فنی اضافه کنید.</p>';
 renderTankReports();
 $('storageStatus').textContent=`${db.tanks.length} مخزن و ${db.records.length} سابقه در حافظه محلی این مرورگر ثبت شده است. این داده‌ها به‌صورت خودکار با دستگاه دیگری همگام نمی‌شوند.`;
+renderGlobalSearch();
 }
 $('tankForm').addEventListener('submit',e=>{e.preventDefault();const id=$('tankId').value||uid();const item={id,tag:$('tankTag').value.trim().toUpperCase(),type:$('tankType').value.trim(),location:$('tankLocation').value.trim(),status:$('tankStatus').value,antennaType:$('antennaType').value,upperReferencePosition:$('upperReferencePosition').value.trim(),tankBottomPosition:$('tankBottomPosition').value.trim(),maximumSafeFill:$('maximumSafeFill').value.trim(),offsetToRoof:$('offsetToRoof').value.trim(),nozzleLength:$('nozzleLength').value.trim(),stillingWellDiameter:$('stillingWellDiameter').value.trim(),referenceInnage:$('referenceInnage').value.trim(),referenceUllage:$('referenceUllage').value.trim(),acceptReference:$('acceptReference').value,acceptReferenceStatus:$('acceptReferenceStatus').value.trim(),equipment:$('tankEquipment').value.trim(),notes:$('tankNotes').value.trim()};if(!item.tag)return;if(db.tanks.some(t=>t.tag.toLowerCase()===item.tag.toLowerCase()&&t.id!==id)){alert('این تگ مخزن قبلاً ثبت شده است.');return}const i=db.tanks.findIndex(t=>t.id===id);if(i>=0)db.tanks[i]=item;else db.tanks.push(item);$('tankForm').reset();$('tankId').value='';$('cancelTank').classList.add('hidden');save()});
 $('recordForm').addEventListener('submit',e=>{e.preventDefault();const id=$('recordId').value||uid();const item={id,tankId:$('recordTank').value,date:jalaliToISO($('recordDate').value),tag:$('recordTag').value.trim().toUpperCase(),type:$('recordType').value,title:$('recordTitle').value.trim(),text:$('recordText').value.trim()};if(!item.tankId){alert('ابتدا یک مخزن انتخاب کنید.');return}if(!item.date){alert('تاریخ شمسی معتبر وارد کنید؛ نمونه: ۱۴۰۵/۰۷/۱۷');return}const i=db.records.findIndex(r=>r.id===id);if(i>=0)db.records[i]=item;else db.records.push(item);$('recordForm').reset();$('recordId').value='';$('recordDate').value=formatDate(dateToday());$('cancelRecord').classList.add('hidden');save()});
 $('cancelTank').onclick=()=>{$('tankForm').reset();$('tankId').value='';$('cancelTank').classList.add('hidden')};
 $('cancelRecord').onclick=()=>{$('recordForm').reset();$('recordId').value='';$('recordDate').value=formatDate(dateToday());$('cancelRecord').classList.add('hidden')};
 $('tankSearch').addEventListener('input',render);$('recordSearch').addEventListener('input',render);$('recordTankFilter').addEventListener('change',render);$('recordTypeFilter').addEventListener('change',render);
+$('globalSearchInput').addEventListener('input',renderGlobalSearch);$('globalSearchClear').addEventListener('click',()=>{$('globalSearchInput').value='';renderGlobalSearch();$('globalSearchInput').focus()});
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
 if(b.dataset.goTab){tab(b.dataset.goTab);window.scrollTo(0,0);return}
+if(b.dataset.globalEditTank){const t=db.tanks.find(x=>x.id===b.dataset.globalEditTank);if(!t)return;tab('tanks');const editBtn=document.querySelector(`[data-edit-tank="${t.id}"]`);if(editBtn)editBtn.click();return}
+if(b.dataset.globalAddRecord){tab('records');$('recordTank').value=b.dataset.globalAddRecord;window.scrollTo(0,0);return}
+if(b.dataset.globalTankRecords){reportTankId=b.dataset.globalTankRecords;selectedReportIds.clear();tab('tankReports');renderTankReports();setTimeout(()=>$('tankReportDetail').scrollIntoView({behavior:'smooth',block:'start'}),60);return}
+if(b.dataset.globalEditRecord){const r=db.records.find(x=>x.id===b.dataset.globalEditRecord);if(!r)return;tab('records');$('recordId').value=r.id;$('recordTank').value=r.tankId;$('recordDate').value=formatDate(r.date);$('recordTag').value=r.tag||'';$('recordType').value=r.type||'';$('recordTitle').value=r.title||'';$('recordText').value=r.text||'';$('cancelRecord').classList.remove('hidden');window.scrollTo(0,0);return}
+if(b.dataset.globalOpenTankReport){reportTankId=b.dataset.globalOpenTankReport;selectedReportIds.clear();tab('tankReports');renderTankReports();setTimeout(()=>$('tankReportDetail').scrollIntoView({behavior:'smooth',block:'start'}),60);return}
 if(b.dataset.openTankReport){reportTankId=b.dataset.openTankReport;selectedReportIds.clear();renderTankReports();setTimeout(()=>{$('tankReportDetail').scrollIntoView({behavior:'smooth',block:'start'})},60);return}
 if(b.dataset.openRecord){const rid=b.dataset.openRecord;tab('records');setTimeout(()=>{const el=[...document.querySelectorAll('#recordList .item')].find(x=>x.querySelector(`[data-edit-record="${rid}"]`));if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='3px solid #72bfff';setTimeout(()=>el.style.outline='',2200)}},50);return}
 if(b.dataset.editTank){const t=db.tanks.find(x=>x.id===b.dataset.editTank);if(!t)return;tab('tanks');$('tankId').value=t.id;$('tankTag').value=t.tag;$('tankType').value=t.type||'';$('tankLocation').value=t.location||'';$('tankStatus').value=t.status||'';$('antennaType').value=t.antennaType||'Free Space';syncAntennaFields();$('upperReferencePosition').value=t.upperReferencePosition||'';$('tankBottomPosition').value=t.tankBottomPosition||'';$('maximumSafeFill').value=t.maximumSafeFill||'';$('offsetToRoof').value=t.offsetToRoof||'';$('nozzleLength').value=t.nozzleLength||'';$('stillingWellDiameter').value=t.stillingWellDiameter||'';$('referenceInnage').value=t.referenceInnage||'';$('referenceUllage').value=t.referenceUllage||'';$('acceptReference').value=t.acceptReference||'';$('acceptReferenceStatus').value=t.acceptReferenceStatus||'';$('tankEquipment').value=t.equipment||'';$('tankNotes').value=t.notes||'';$('cancelTank').classList.remove('hidden');setTimeout(()=>$('tankForm').scrollIntoView({behavior:'smooth',block:'start'}),60)}
