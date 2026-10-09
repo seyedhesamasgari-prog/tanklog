@@ -55,6 +55,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <button class="tab active" data-tab="home">نمای کلی</button>
 <button class="tab" data-tab="tanks">مخازن</button>
 <button class="tab" data-tab="records">سوابق فنی</button>
+<button class="tab" data-tab="tankReports">گزارش مخازن</button>
 <button class="tab" data-tab="backup">پشتیبان</button>
 </div>
 <section id="home">
@@ -93,11 +94,17 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 </form></div>
 <div class="card"><h2>سوابق ثبت‌شده</h2><input id="recordSearch" placeholder="جست‌وجوی مخزن، تگ یا متن سابقه…" autocomplete="off"><div id="recordList"></div></div>
 </section>
+<section id="tankReports" class="hidden">
+<div class="card"><h2>گزارش مخازن</h2><p class="muted">مخزن را از فهرست مرتب‌شده انتخاب کنید تا سوابق همان مخزن به ترتیب تاریخ نمایش داده شوند.</p><input id="reportTankSearch" placeholder="جست‌وجوی مخزن…" autocomplete="off"><div id="reportTankList"></div></div>
+<div class="card hidden" id="tankReportDetail"><h2>سوابق مخزن <span id="selectedReportTank" class="tag"></span></h2><p class="muted">سوابق از جدیدترین به قدیمی‌ترین مرتب شده‌اند. برای گزارش سفارشی، فقط موارد دلخواه را تیک بزنید یا بازه تاریخ را محدود کنید.</p>
+<div class="row"><div><label for="reportDateFrom">از تاریخ شمسی (اختیاری)</label><input id="reportDateFrom" placeholder="۱۴۰۵/۰۱/۰۱" inputmode="numeric" dir="ltr"></div><div><label for="reportDateTo">تا تاریخ شمسی (اختیاری)</label><input id="reportDateTo" placeholder="۱۴۰۵/۱۲/۲۹" inputmode="numeric" dir="ltr"></div></div>
+<div class="actions"><button class="secondary" id="reportSelectAll" type="button">انتخاب همه موارد نمایان</button><button class="secondary" id="reportClearSelection" type="button">لغو انتخاب</button></div><p id="reportSelectionCount" class="muted">۰ سابقه انتخاب شده</p><div id="tankReportRecords"></div><button class="primary full" id="printSelectedReports" type="button">چاپ / ذخیره PDF سوابق انتخاب‌شده</button></div>
+</section>
 <section id="backup" class="hidden">
 <div class="card"><h2>پشتیبان‌گیری و خروجی</h2><p class="muted">پشتیبان JSON برای بازیابی کامل مناسب است. CSV را می‌توان در Excel باز کرد. برای PDF از گزینه چاپ/ذخیره PDF آیفون استفاده کنید.</p>
 <button class="primary full" id="exportJson">دانلود پشتیبان کامل (JSON)</button>
 <button class="secondary full" id="exportCsv">خروجی سوابق برای Excel (CSV)</button>
-<button class="secondary full" id="printPdf">آماده‌سازی گزارش برای PDF</button>
+<label for="pdfTankSelect">مخزن موردنظر برای گزارش PDF</label><select id="pdfTankSelect"><option value="">انتخاب مخزن…</option></select><button class="secondary full" id="printPdf">تهیه گزارش PDF مخزن انتخاب‌شده</button>
 <label for="importFile">بازیابی پشتیبان JSON</label><input id="importFile" type="file" accept=".json,application/json">
 <div class="note" style="margin-top:14px">هشدار: بازیابی پشتیبان جایگزین اطلاعات فعلی می‌شود. قبل از بازیابی، خروجی پشتیبان فعلی را ذخیره کنید.</div>
 <button class="danger full" id="clearAll">حذف همه اطلاعات</button></div>
@@ -109,6 +116,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <script>
 (function(){
 const KEY='tanklog_v01_data';
+let reportTankId=''; let selectedReportIds=new Set();
 let db={tanks:[],records:[]};
 const $=id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -138,10 +146,32 @@ function syncAntennaFields(){const isWell=$('antennaType').value==='Stilling Wel
 $('antennaType').addEventListener('change',syncAntennaFields);syncAntennaFields();
 function tab(name){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));$(name).classList.remove('hidden');document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));render()}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>tab(b.dataset.tab)));
+function renderTankReports(){
+ const q=($('reportTankSearch')?.value||'').toLowerCase();
+ const tanks=db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag));
+ $('reportTankList').innerHTML=tanks.filter(t=>t.tag.toLowerCase().includes(q)).map(t=>`<button type="button" class="item full secondary" style="text-align:right" data-open-tank-report="${safe(t.id)}"><b class="tag">${safe(t.tag)}</b><span class="muted"> · ${db.records.filter(r=>r.tankId===t.id).length} سابقه</span></button>`).join('')||'<p class="muted">مخزنی پیدا نشد.</p>';
+ const detail=$('tankReportDetail'); if(!reportTankId||!db.tanks.some(t=>t.id===reportTankId)){detail.classList.add('hidden');return}
+ const tank=db.tanks.find(t=>t.id===reportTankId);detail.classList.remove('hidden');$('selectedReportTank').textContent=tank.tag;
+ const fromRaw=$('reportDateFrom').value.trim(),toRaw=$('reportDateTo').value.trim();
+ const from=fromRaw?jalaliToISO(fromRaw):null,to=toRaw?jalaliToISO(toRaw):null;
+ const dateFilterValid=(!fromRaw||from)&&(!toRaw||to);
+ let records=db.records.filter(r=>r.tankId===reportTankId).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ if(dateFilterValid){if(from)records=records.filter(r=>(r.date||'')>=from);if(to)records=records.filter(r=>(r.date||'')<=to)}
+ $('tankReportRecords').innerHTML=!dateFilterValid?'<p class="note">تاریخ شمسی را با قالب سال/ماه/روز وارد کنید؛ مثلاً ۱۴۰۵/۰۷/۱۷.</p>':records.length?records.map(r=>`<label class="item" style="display:flex;gap:10px;align-items:flex-start;font-weight:400"><input type="checkbox" data-report-check="${safe(r.id)}" style="width:22px;min-width:22px;margin-top:5px" ${selectedReportIds.has(r.id)?'checked':''}><span><b>${safe(r.title||'بدون عنوان')}</b><br><span class="muted">${safe(formatDate(r.date))} · ${safe(r.tag||'بدون تگ')}</span><br>${safe(r.text||'بدون شرح تکمیلی')}</span></label>`).join(''):'<p class="muted">برای این مخزن در این بازه سابقه‌ای ثبت نشده است.</p>';
+ const visibleIds=new Set(records.map(r=>r.id)); for(const id of [...selectedReportIds])if(!db.records.some(r=>r.id===id&&r.tankId===reportTankId))selectedReportIds.delete(id);
+ $('reportSelectionCount').textContent=`${records.filter(r=>selectedReportIds.has(r.id)).length} سابقه از ${records.length} مورد نمایان انتخاب شده است.`;
+}
+function reportPrintHtml(tank, records){
+ const esc=safe, dateLabel=formatDate(dateToday());
+ let html=`<h1>گزارش سوابق فنی مخزن <span class="ltr">${esc(tank.tag)}</span></h1><div class="report-subtitle">TankLog · تاریخ تهیه گزارش: <span class="ltr">${esc(dateLabel)}</span></div><div class="report-meta"><span>مخزن: <span class="ltr">${esc(tank.tag)}</span></span><span>تعداد سوابق انتخاب‌شده: ${records.length}</span></div><h2>مشخصات مخزن</h2><div class="report-item"><h3><span class="ltr">${esc(tank.tag)}</span></h3>${tank.type?`<p><b>نوع مخزن:</b> ${esc(tank.type)}</p>`:''}${tank.location?`<p><b>واحد / محل:</b> ${esc(tank.location)}</p>`:''}${tank.antennaType?`<p><b>نوع آنتن رادار FlexLine 990:</b> ${esc(tank.antennaType)}</p>`:''}${tankTechHtml(tank)}${tank.equipment?`<p><b>تجهیزات مرتبط:</b> ${esc(tank.equipment)}</p>`:''}${tank.notes?`<p><b>توضیحات:</b> ${esc(tank.notes)}</p>`:''}</div><h2>سوابق انتخاب‌شده (به ترتیب تاریخ)</h2>`;
+ html+=records.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map((r,i)=>`<div class="report-item"><h3>${i+1}. ${esc(r.title||'بدون عنوان')}</h3><p><b>تاریخ:</b> <span class="ltr">${esc(formatDate(r.date)||'')}</span></p>${r.tag?`<p><b>تگ تجهیز:</b> <span class="ltr">${esc(r.tag)}</span></p>`:''}<p><b>شرح کار:</b> ${esc(r.text||'بدون شرح تکمیلی')}</p></div>`).join('');
+ return html;
+}
 function render(){
 $('tankCount').textContent=db.tanks.length;$('recordCount').textContent=db.records.length;
 $('equipmentCount').textContent=new Set(db.tanks.flatMap(t=>(t.equipment||'').split(/[,،\n]/).map(x=>x.trim()).filter(Boolean))).size;
 $('recordTank').innerHTML='<option value="">انتخاب مخزن</option>'+db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag)).map(t=>`<option value="${safe(t.id)}">${safe(t.tag)}</option>`).join('');
+const pdfSelect=$('pdfTankSelect');const previousPdfTank=pdfSelect.value;pdfSelect.innerHTML='<option value="">انتخاب مخزن…</option>'+db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag)).map(t=>`<option value="${safe(t.id)}">${safe(t.tag)}</option>`).join('');if(db.tanks.some(t=>t.id===previousPdfTank))pdfSelect.value=previousPdfTank;else{const tk2011=db.tanks.find(t=>t.tag.toUpperCase()==='TK-2011');if(tk2011)pdfSelect.value=tk2011.id}
 const tq=($('tankSearch')?.value||'').toLowerCase();
 const tanks=db.tanks.filter(t=>(t.tag+' '+t.type+' '+t.location+' '+t.equipment+' '+t.notes+' '+(t.antennaType||'')).toLowerCase().includes(tq)).sort((a,b)=>a.tag.localeCompare(b.tag));
 $('tankList').innerHTML=tanks.length?tanks.map(t=>`<div class="item"><div class="itemtop"><h3 class="tag">${safe(t.tag)}</h3><span class="muted">${safe(t.type||'')}</span></div><p class="muted">${safe(t.location||'بدون محل')}</p>${t.equipment?`<p><b>تجهیزات:</b> ${safe(t.equipment)}</p>`:''}${t.antennaType?`<p><b>نوع آنتن:</b> ${safe(t.antennaType)}</p>`:''}${tankTechHtml(t)}${t.notes?`<p>${safe(t.notes)}</p>`:''}<div class="actions"><button class="secondary" data-edit-tank="${safe(t.id)}">ویرایش</button><button class="secondary" data-add-record="${safe(t.id)}">ثبت سابقه</button><button class="danger" data-del-tank="${safe(t.id)}">حذف</button></div></div>`).join(''):'<p class="muted">هنوز مخزنی ثبت نشده است.</p>';
@@ -150,6 +180,7 @@ const recs=db.records.filter(r=>(tankName(r.tankId)+' '+r.tag+' '+r.title+' '+r.
 const recHtml=r=>`<div class="item"><div class="itemtop"><h3>${safe(r.title)}</h3><span class="tag">${safe(r.tag||'بدون تگ')}</span></div><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))}</p><p>${safe(r.text||'بدون شرح تکمیلی')}</p><div class="actions"><button class="secondary" data-edit-record="${safe(r.id)}">ویرایش</button><button class="danger" data-del-record="${safe(r.id)}">حذف</button></div></div>`;
 $('recordList').innerHTML=recs.length?recs.map(recHtml).join(''):'<p class="muted">سابقه‌ای مطابق جست‌وجو پیدا نشد.</p>';
 $('recent').innerHTML=db.records.length?db.records.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4).map(r=>`<div class="item"><b>${safe(r.title)}</b><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))}</p><p>${safe(r.text||'')}</p></div>`).join(''):'<p class="muted">برای شروع، یک مخزن ثبت کنید و سپس سابقه فنی اضافه کنید.</p>';
+renderTankReports();
 $('storageStatus').textContent=`${db.tanks.length} مخزن و ${db.records.length} سابقه در حافظه محلی این مرورگر ثبت شده است. این داده‌ها به‌صورت خودکار با دستگاه دیگری همگام نمی‌شوند.`;
 }
 $('tankForm').addEventListener('submit',e=>{e.preventDefault();const id=$('tankId').value||uid();const item={id,tag:$('tankTag').value.trim().toUpperCase(),type:$('tankType').value.trim(),location:$('tankLocation').value.trim(),antennaType:$('antennaType').value,upperReferencePosition:$('upperReferencePosition').value.trim(),tankBottomPosition:$('tankBottomPosition').value.trim(),maximumSafeFill:$('maximumSafeFill').value.trim(),offsetToRoof:$('offsetToRoof').value.trim(),nozzleLength:$('nozzleLength').value.trim(),stillingWellDiameter:$('stillingWellDiameter').value.trim(),referenceInnage:$('referenceInnage').value.trim(),referenceUllage:$('referenceUllage').value.trim(),acceptReference:$('acceptReference').value,acceptReferenceStatus:$('acceptReferenceStatus').value.trim(),equipment:$('tankEquipment').value.trim(),notes:$('tankNotes').value.trim()};if(!item.tag)return;if(db.tanks.some(t=>t.tag.toLowerCase()===item.tag.toLowerCase()&&t.id!==id)){alert('این تگ مخزن قبلاً ثبت شده است.');return}const i=db.tanks.findIndex(t=>t.id===id);if(i>=0)db.tanks[i]=item;else db.tanks.push(item);$('tankForm').reset();$('tankId').value='';$('cancelTank').classList.add('hidden');save()});
@@ -169,39 +200,57 @@ $('exportJson').onclick=()=>download('TankLog-backup-'+dateForFilename()+'.json'
 function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
 $('exportCsv').onclick=()=>{const rows=[['Tank','Date','Equipment Tag','Title','Work Summary'],...db.records.map(r=>[tankName(r.tankId),formatDate(r.date),r.tag,r.title,r.text])];const csv='\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');download('TankLog-records-'+dateForFilename()+'.csv',csv,'text/csv;charset=utf-8')};
 $('printPdf').onclick=()=>{
- const report=$('printReport');
- const esc=safe;
- const sorted=db.records.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
- const tanks=db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag));
+ const selectedId=$('pdfTankSelect').value;
+ if(!selectedId){alert('ابتدا مخزن موردنظر را برای گزارش PDF انتخاب کنید.');return}
+ const tank=db.tanks.find(t=>t.id===selectedId);
+ if(!tank){alert('مخزن انتخاب‌شده پیدا نشد؛ فهرست را تازه‌سازی کنید.');return}
+ const report=$('printReport');const esc=safe;
+ const sorted=db.records.filter(r=>r.tankId===selectedId).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
  const dateLabel=formatDate(dateToday());
- let html=`<h1>گزارش سوابق فنی مخازن و تجهیزات</h1><div class="report-subtitle">TankLog · تاریخ تهیه گزارش: <span class="ltr">${esc(dateLabel)}</span></div>`;
- html+=`<div class="report-meta"><span>تعداد مخازن: ${tanks.length}</span><span>تعداد سوابق: ${sorted.length}</span></div>`;
- if(tanks.length){html+='<h2>فهرست مخازن</h2>';html+=tanks.map(t=>`<div class="report-item"><h3><span class="ltr">${esc(t.tag)}</span></h3>${t.type?`<p><b>نوع:</b> ${esc(t.type)}</p>`:''}${t.location?`<p><b>واحد / محل:</b> ${esc(t.location)}</p>`:''}${t.antennaType?`<p><b>نوع آنتن:</b> ${esc(t.antennaType)}</p>`:''}${tankTechHtml(t)}${t.equipment?`<p><b>تجهیزات مرتبط:</b> ${esc(t.equipment)}</p>`:''}${t.notes?`<p><b>توضیحات:</b> ${esc(t.notes)}</p>`:''}</div>`).join('')}
- html+='<h2>سوابق ثبت‌شده</h2>';
- html+=sorted.length?sorted.map((r,i)=>`<div class="report-item"><h3>${i+1}. ${esc(r.title||'بدون عنوان')}</h3><p><b>مخزن:</b> <span class="ltr">${esc(tankName(r.tankId))}</span></p><p><b>تاریخ:</b> <span class="ltr">${esc(formatDate(r.date)||'')}</span></p>${r.tag?`<p><b>تگ تجهیز:</b> <span class="ltr">${esc(r.tag)}</span></p>`:''}<p><b>شرح کار:</b> ${esc(r.text||'بدون شرح تکمیلی')}</p></div>`).join(''):'<p class="empty">هیچ سابقه فنی ثبت نشده است.</p>';
- report.innerHTML=html; report.setAttribute('aria-hidden','false');
- // iOS Home Screen web apps may ignore window.print(). Open a user-initiated
- // report page so printing can be launched from Safari's normal page context.
- const standalone = (window.navigator.standalone === true) ||
-   (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
- if (standalone) {
-   const reportWindow = window.open('', '_blank');
-   if (reportWindow) {
+ let html=`<h1>گزارش سوابق فنی مخزن <span class="ltr">${esc(tank.tag)}</span></h1><div class="report-subtitle">TankLog · تاریخ تهیه گزارش: <span class="ltr">${esc(dateLabel)}</span></div>`;
+ html+=`<div class="report-meta"><span>مخزن: <span class="ltr">${esc(tank.tag)}</span></span><span>تعداد سوابق: ${sorted.length}</span></div>`;
+ html+='<h2>مشخصات مخزن</h2>';
+ html+=`<div class="report-item"><h3><span class="ltr">${esc(tank.tag)}</span></h3>${tank.type?`<p><b>نوع مخزن:</b> ${esc(tank.type)}</p>`:''}${tank.location?`<p><b>واحد / محل:</b> ${esc(tank.location)}</p>`:''}${tank.antennaType?`<p><b>نوع آنتن رادار FlexLine 990:</b> ${esc(tank.antennaType)}</p>`:''}${tankTechHtml(tank)}${tank.equipment?`<p><b>تجهیزات مرتبط:</b> ${esc(tank.equipment)}</p>`:''}${tank.notes?`<p><b>توضیحات:</b> ${esc(tank.notes)}</p>`:''}</div>`;
+ html+='<h2>سوابق فنی ثبت‌شده</h2>';
+ html+=sorted.length?sorted.map((r,i)=>`<div class="report-item"><h3>${i+1}. ${esc(r.title||'بدون عنوان')}</h3><p><b>تاریخ:</b> <span class="ltr">${esc(formatDate(r.date)||'')}</span></p>${r.tag?`<p><b>تگ تجهیز:</b> <span class="ltr">${esc(r.tag)}</span></p>`:''}<p><b>شرح کار:</b> ${esc(r.text||'بدون شرح تکمیلی')}</p></div>`).join(''):'<p class="empty">برای این مخزن هنوز سابقه فنی ثبت نشده است.</p>';
+ report.innerHTML=html;report.setAttribute('aria-hidden','false');
+ const standalone=(window.navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+ if(standalone){
+   // Open a clean report document from the user gesture. Keep the print action explicit
+   // and provide a clear fallback because iOS Home Screen mode may suppress print dialogs.
+   const reportWindow=window.open('about:blank','_blank');
+   if(reportWindow){
      reportWindow.document.open();
-     reportWindow.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>گزارش سوابق فنی TankLog</title><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:right;color:#111;line-height:1.7;padding:16px;max-width:900px;margin:auto}h1{font-size:22px;text-align:center}h2{font-size:17px;border-bottom:1px solid #bbb;padding-bottom:6px;margin-top:24px}.report-subtitle{text-align:center;color:#555;border-bottom:1px solid #999;padding-bottom:12px;margin-bottom:18px}.report-meta{display:flex;justify-content:space-between;gap:12px}.report-item{border:1px solid #bbb;border-radius:8px;padding:12px;margin:10px 0;break-inside:avoid}.report-item h3{font-size:15px;margin:0 0 6px}.report-item p{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere}.ltr{direction:ltr;unicode-bidi:plaintext;display:inline-block}.toolbar{position:sticky;top:0;background:#fff;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}button{font:inherit;background:#17324d;color:#fff;border:0;border-radius:8px;padding:10px 14px;margin-left:8px}@media print{.toolbar{display:none}@page{size:A4;margin:14mm}body{padding:0}}</style></head><body><div class="toolbar"><button onclick="window.print()">چاپ / ذخیره PDF</button><button onclick="window.close()">بازگشت</button></div>${html}</body></html>`);
+     reportWindow.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TankLog-${esc(tank.tag)}-${dateForFilename()}</title><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:right;color:#111;line-height:1.7;padding:16px;max-width:900px;margin:auto}h1{font-size:22px;text-align:center}h2{font-size:17px;border-bottom:1px solid #bbb;padding-bottom:6px;margin-top:24px}.report-subtitle{text-align:center;color:#555;border-bottom:1px solid #999;padding-bottom:12px;margin-bottom:18px}.report-meta{display:flex;justify-content:space-between;gap:12px}.report-item{border:1px solid #bbb;border-radius:8px;padding:12px;margin:10px 0;break-inside:avoid}.report-item h3{font-size:15px;margin:0 0 6px}.report-item p{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere}.tank-tech{margin-top:9px;padding:9px;background:#f3f6f8}.ltr{direction:ltr;unicode-bidi:plaintext;display:inline-block}.toolbar{position:sticky;top:0;background:#fff;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}button{font:inherit;background:#17324d;color:#fff;border:0;border-radius:8px;padding:10px 14px;margin-left:8px}.hint{background:#fff4d6;padding:10px;border-radius:8px}@media print{.toolbar,.hint{display:none}@page{size:A4;margin:14mm}body{padding:0}}</style></head><body><div class="toolbar"><button id="printButton">چاپ / ذخیره PDF</button><button id="backButton">بازگشت</button></div><div class="hint">اگر دکمه چاپ در حالت آیکون صفحه اصلی واکنش نداد، همین گزارش را در Safari باز کنید و از Share → Print → بزرگ‌کردن پیش‌نمایش → Share → Save to Files استفاده کنید.</div>${html}</body></html>`);
      reportWindow.document.close();
-   } else {
-     alert('برای ساخت PDF، همین گزارش را در Safari باز کنید؛ حالت آیکون صفحه اصلی اجازه بازکردن پنجره چاپ را نداد.');
-   }
- } else {
-   const oldTitle=document.title;document.title='TankLog-Technical-Records';
-   window.print();
-   setTimeout(()=>{document.title=oldTitle;report.setAttribute('aria-hidden','true')},1500);
+     reportWindow.document.getElementById('printButton').addEventListener('click',()=>{try{reportWindow.focus();reportWindow.print()}catch(e){} });
+     reportWindow.document.getElementById('backButton').addEventListener('click',()=>{try{reportWindow.close()}catch(e){}});
+   }else{alert('مرورگر اجازه بازکردن گزارش را نداد. گزارش را در Safari باز کنید و از Share → Print استفاده کنید.')}
+ }else{
+   const oldTitle=document.title;document.title=`TankLog-${tank.tag}-${dateForFilename()}`;
+   window.print();setTimeout(()=>{document.title=oldTitle;report.setAttribute('aria-hidden','true')},1500);
+ }
+};
+$('reportTankSearch').addEventListener('input',renderTankReports);
+['reportDateFrom','reportDateTo'].forEach(id=>$(id).addEventListener('input',renderTankReports));
+$('reportSelectAll').onclick=()=>{const ids=[...document.querySelectorAll('[data-report-check]')].map(x=>x.dataset.reportCheck);ids.forEach(id=>selectedReportIds.add(id));renderTankReports()};
+$('reportClearSelection').onclick=()=>{selectedReportIds.clear();renderTankReports()};
+$('tankReportRecords').addEventListener('change',e=>{const id=e.target?.dataset?.reportCheck;if(!id)return;if(e.target.checked)selectedReportIds.add(id);else selectedReportIds.delete(id);renderTankReports()});
+$('printSelectedReports').onclick=()=>{
+ if(!reportTankId){alert('ابتدا یک مخزن انتخاب کنید.');return}
+ const tank=db.tanks.find(t=>t.id===reportTankId);const records=db.records.filter(r=>r.tankId===reportTankId&&selectedReportIds.has(r.id));
+ if(!records.length){alert('حداقل یک سابقه را برای گزارش انتخاب کنید.');return}
+ const html=reportPrintHtml(tank,records);const title=`TankLog-${tank.tag}-${dateForFilename()}`;
+ const docHtml=`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe(title)}</title><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:right;color:#111;line-height:1.7;padding:16px;max-width:900px;margin:auto}h1{font-size:22px;text-align:center}h2{font-size:17px;border-bottom:1px solid #bbb;padding-bottom:6px;margin-top:24px}.report-subtitle{text-align:center;color:#555;border-bottom:1px solid #999;padding-bottom:12px;margin-bottom:18px}.report-meta{display:flex;justify-content:space-between;gap:12px}.report-item{border:1px solid #bbb;border-radius:8px;padding:12px;margin:10px 0;break-inside:avoid}.report-item h3{font-size:15px;margin:0 0 6px}.report-item p{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere}.tank-tech{margin-top:9px;padding:9px;background:#f3f6f8}.tank-tech p{margin:4px 0}.ltr{direction:ltr;unicode-bidi:plaintext;display:inline-block}.toolbar{position:sticky;top:0;background:#fff;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}.toolbar button{font:inherit;background:#17324d;color:#fff;border:0;border-radius:8px;padding:10px 14px;margin-left:8px}.hint{background:#fff4d6;padding:10px;border-radius:8px}@page{size:A4;margin:14mm}@media print{.toolbar,.hint{display:none}body{padding:0}}</style></head><body><div class="toolbar"><button id="printButton">چاپ / ذخیره PDF</button><button id="backButton">بازگشت</button></div><div class="hint">اگر چاپ در آیکون صفحه اصلی باز نشد، گزارش را در Safari باز کنید و از Share → Print → بزرگ‌کردن پیش‌نمایش → Share → Save to Files استفاده کنید.</div>${html}<script>document.getElementById('printButton').addEventListener('click',()=>window.print());document.getElementById('backButton').addEventListener('click',()=>history.back());<\/script></body></html>`;
+ // A user-initiated top-level navigation avoids popup blockers in iOS Home Screen mode.
+ try{sessionStorage.setItem('tanklog_report_html',docHtml);sessionStorage.setItem('tanklog_report_return',location.href);location.href='./?generated=1'}catch(e){
+   const w=window.open('about:blank','_blank');if(w){w.document.open();w.document.write(docHtml);w.document.close()}else alert('گزارش ساخته شد اما مرورگر اجازه بازکردن صفحه گزارش را نداد. لطفاً در Safari همین قابلیت را اجرا کنید.');
  }
 };
 $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!Array.isArray(x.tanks)||!Array.isArray(x.records))throw Error();if(confirm('اطلاعات فعلی با محتوای فایل جایگزین شود؟')){db=x;save();alert('بازیابی انجام شد.')}}catch(err){alert('فایل پشتیبان معتبر نیست.')}e.target.value=''});
 $('clearAll').onclick=()=>{if(confirm('همه مخازن و سوابق حذف شوند؟ این کار قابل برگشت نیست.')){db={tanks:[],records:[]};save()}};
 load();$('recordDate').value=formatDate(dateToday());render();
+if(new URLSearchParams(location.search).get('generated')==='1'){const h=sessionStorage.getItem('tanklog_report_html');if(h){document.open();document.write(h);document.close()}}
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 })();
 </script>
