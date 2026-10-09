@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#17324d">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json">
 <title>TankLog | دفتر سوابق فنی</title>
 <style>
 :root{--navy:#17324d;--blue:#286a8e;--bg:#f3f6f8;--card:#fff;--ink:#17212b;--muted:#62717e;--line:#dce4e9;--danger:#a63232}
@@ -30,7 +30,22 @@ textarea{min-height:90px;resize:vertical}
 .note{background:#fff7df;border:1px solid #f0dda1;padding:11px;border-radius:11px;font-size:13px}
 footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:11px}
 @media(max-width:420px){.row{grid-template-columns:1fr}.stats strong{font-size:19px}}
-@media print{header,.tabs,form,.actions,footer,.no-print{display:none!important}body{background:white}main{padding:0}.card,.item{box-shadow:none;break-inside:avoid}.hidden{display:block!important}}
+#printReport{display:none}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff!important;color:#111!important;font-size:11pt;line-height:1.7}
+  body>header,body>main,body>footer{display:none!important}
+  #printReport{display:block!important;direction:rtl;text-align:right;font-family:Tahoma,Arial,sans-serif}
+  #printReport h1{font-size:20pt;text-align:center;margin:0 0 4mm}
+  #printReport .report-subtitle{text-align:center;color:#555;border-bottom:1px solid #999;padding-bottom:4mm;margin-bottom:6mm}
+  #printReport h2{font-size:14pt;margin:7mm 0 3mm;border-bottom:1px solid #bbb;padding-bottom:2mm}
+  #printReport .report-meta{display:flex;justify-content:space-between;gap:8mm;font-size:10pt;color:#444}
+  #printReport .report-item{border:1px solid #bbb;border-radius:3mm;padding:4mm;margin:3mm 0;break-inside:avoid}
+  #printReport .report-item h3{font-size:12pt;margin:0 0 2mm}
+  #printReport p{margin:1.5mm 0;white-space:pre-wrap;overflow-wrap:anywhere}
+  #printReport .ltr{direction:ltr;unicode-bidi:plaintext;display:inline-block}
+  #printReport .empty{color:#555}
+}
 </style>
 </head>
 <body>
@@ -82,6 +97,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <div class="card"><h2>وضعیت ذخیره‌سازی</h2><p id="storageStatus" class="muted">در حال بررسی…</p></div>
 </section>
 </main>
+<section id="printReport" aria-hidden="true"></section>
 <footer>نسخه آزمایشی · اطلاعات فنی حساس را فقط مطابق سیاست‌های محل کار ذخیره کنید.</footer>
 <script>
 (function(){
@@ -126,13 +142,26 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 $('exportJson').onclick=()=>download('TankLog-backup-'+dateToday()+'.json',JSON.stringify(db,null,2),'application/json;charset=utf-8');
 function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
 $('exportCsv').onclick=()=>{const rows=[['Tank','Date','Equipment Tag','Title','Work Summary'],...db.records.map(r=>[tankName(r.tankId),r.date,r.tag,r.title,r.text])];const csv='\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');download('TankLog-records-'+dateToday()+'.csv',csv,'text/csv;charset=utf-8')};
-$('printPdf').onclick=()=>{const old=document.title;document.title='TankLog-Technical-Records';window.print();setTimeout(()=>document.title=old,1000)};
+$('printPdf').onclick=()=>{
+ const report=$('printReport');
+ const esc=safe;
+ const sorted=db.records.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ const tanks=db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag));
+ const dateLabel=dateToday();
+ let html=`<h1>گزارش سوابق فنی مخازن و تجهیزات</h1><div class="report-subtitle">TankLog · تاریخ تهیه گزارش: <span class="ltr">${esc(dateLabel)}</span></div>`;
+ html+=`<div class="report-meta"><span>تعداد مخازن: ${tanks.length}</span><span>تعداد سوابق: ${sorted.length}</span></div>`;
+ if(tanks.length){html+='<h2>فهرست مخازن</h2>';html+=tanks.map(t=>`<div class="report-item"><h3><span class="ltr">${esc(t.tag)}</span></h3>${t.type?`<p><b>نوع:</b> ${esc(t.type)}</p>`:''}${t.location?`<p><b>واحد / محل:</b> ${esc(t.location)}</p>`:''}${t.equipment?`<p><b>تجهیزات مرتبط:</b> ${esc(t.equipment)}</p>`:''}${t.notes?`<p><b>توضیحات:</b> ${esc(t.notes)}</p>`:''}</div>`).join('')}
+ html+='<h2>سوابق ثبت‌شده</h2>';
+ html+=sorted.length?sorted.map((r,i)=>`<div class="report-item"><h3>${i+1}. ${esc(r.title||'بدون عنوان')}</h3><p><b>مخزن:</b> <span class="ltr">${esc(tankName(r.tankId))}</span></p><p><b>تاریخ:</b> <span class="ltr">${esc(r.date||'')}</span></p>${r.tag?`<p><b>تگ تجهیز:</b> <span class="ltr">${esc(r.tag)}</span></p>`:''}<p><b>شرح کار:</b> ${esc(r.text||'بدون شرح تکمیلی')}</p></div>`).join(''):'<p class="empty">هیچ سابقه فنی ثبت نشده است.</p>';
+ report.innerHTML=html; report.setAttribute('aria-hidden','false');
+ const oldTitle=document.title;document.title='TankLog-Technical-Records';
+ window.print();
+ setTimeout(()=>{document.title=oldTitle;report.setAttribute('aria-hidden','true')},1500);
+};
 $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!Array.isArray(x.tanks)||!Array.isArray(x.records))throw Error();if(confirm('اطلاعات فعلی با محتوای فایل جایگزین شود؟')){db=x;save();alert('بازیابی انجام شد.')}}catch(err){alert('فایل پشتیبان معتبر نیست.')}e.target.value=''});
 $('clearAll').onclick=()=>{if(confirm('همه مخازن و سوابق حذف شوند؟ این کار قابل برگشت نیست.')){db={tanks:[],records:[]};save()}};
 load();$('recordDate').value=dateToday();render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 })();
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-}
 </script>
 </body></html>
