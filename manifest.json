@@ -1,13 +1,12 @@
-
 {
-  "name": "TankLog",
+  "name": "TankLog - دفتر سوابق فنی مخازن",
   "short_name": "TankLog",
-  "description": "دفتر سوابق فنی مخازن و تجهیزات",
   "lang": "fa",
   "dir": "rtl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f3f6f8",
-  "theme_color": "#17324d"
+  "theme_color": "#17324d",
+  "description": "دفتر آفلاین سوابق فنی مخازن و تجهیزات"
 }

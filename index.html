@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#17324d">
+<link rel="manifest" href="manifest.json">
 <title>TankLog | دفتر سوابق فنی</title>
 <style>
 :root{--navy:#17324d;--blue:#286a8e;--bg:#f3f6f8;--card:#fff;--ink:#17212b;--muted:#62717e;--line:#dce4e9;--danger:#a63232}
@@ -130,5 +131,8 @@ $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if
 $('clearAll').onclick=()=>{if(confirm('همه مخازن و سوابق حذف شوند؟ این کار قابل برگشت نیست.')){db={tanks:[],records:[]};save()}};
 load();$('recordDate').value=dateToday();render();
 })();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
 </script>
 </body></html>
