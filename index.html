@@ -8,28 +8,28 @@
 <title>TankLog | دفتر سوابق فنی</title>
 <style>
 :root{--navy:#17324d;--blue:#286a8e;--bg:#f3f6f8;--card:#fff;--ink:#17212b;--muted:#62717e;--line:#dce4e9;--danger:#a63232}
-*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;font-size:14px}
-header{background:var(--navy);color:#fff;padding:16px 14px 14px;padding-top:calc(16px + env(safe-area-inset-top));}
-header h1{font-size:20px;margin:0}header p{margin:3px 0 0;color:#d8e6ee;font-size:12px}
-main{max-width:760px;margin:auto;padding:11px 10px 90px}
-.tabs{display:flex;gap:6px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:2}
-button,.btn{border:0;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;cursor:pointer}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;font-size:12px}
+header{background:var(--navy);color:#fff;padding:12px 12px 10px;padding-top:calc(12px + env(safe-area-inset-top));}
+header h1{font-size:18px;margin:0}header p{margin:3px 0 0;color:#d8e6ee;font-size:11px}
+main{max-width:760px;margin:auto;padding:8px 8px 72px}
+.tabs{display:flex;gap:5px;position:sticky;top:0;background:var(--bg);padding:5px 0;z-index:2}
+button,.btn{border:0;border-radius:9px;padding:7px 8px;font:inherit;font-size:12px;cursor:pointer}
 .tab{background:#e2eaf0;color:var(--navy);flex:1}.tab.active{background:var(--navy);color:white}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;box-shadow:0 2px 7px #17324d08}
-h2{font-size:16px;margin:0 0 9px}h3{font-size:14px;margin:0} .muted{color:var(--muted);font-size:12px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.stat{background:#f0f5f8;border-radius:10px;padding:9px 5px;text-align:center}.stat-link{border:0;width:100%;font:inherit;cursor:pointer;color:var(--ink)}.stat small{display:block;color:var(--muted);font-size:9px}.stat strong{display:block;font-size:20px;color:var(--navy)}
-label{display:block;font-size:12px;font-weight:650;margin:9px 0 4px}
-input,textarea,select{width:100%;padding:10px;border:1px solid #cbd7df;border-radius:9px;font:inherit;background:#fff;color:var(--ink);font-size:15px}
-textarea{min-height:76px;resize:vertical}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+h2{font-size:14px;margin:0 0 7px}h3{font-size:12px;margin:0} .muted{color:var(--muted);font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.stat{background:#f0f5f8;border-radius:8px;padding:7px 4px;text-align:center}.stat-link{border:0;width:100%;font:inherit;cursor:pointer;color:var(--ink)}.stat small{display:block;color:var(--muted);font-size:9px}.stat strong{display:block;font-size:17px;color:var(--navy)}
+label{display:block;font-size:11px;font-weight:650;margin:7px 0 3px}
+input,textarea,select{width:100%;padding:8px;border:1px solid #cbd7df;border-radius:8px;font:inherit;background:#fff;color:var(--ink);font-size:13px}
+textarea{min-height:62px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .primary{background:var(--blue);color:white}.secondary{background:#e7eef3;color:var(--navy)}.danger{background:#f8e8e8;color:var(--danger)}
-.full{width:100%;margin-top:9px}.item{border:1px solid var(--line);border-radius:10px;padding:10px;margin:7px 0;background:white}
+.full{width:100%;margin-top:9px}.item{border:1px solid var(--line);border-radius:9px;padding:8px;margin:6px 0;background:white}
 .itemtop{display:flex;justify-content:space-between;gap:8px;align-items:start}.tag{direction:ltr;unicode-bidi:plaintext;font-weight:700;color:var(--navy)}
-.item p{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere}.tank-tech{margin-top:7px;padding:8px;border-radius:8px;background:#f3f6f8;font-size:12px}.tank-tech> b{display:block;margin-bottom:5px}
-.hidden{display:none!important}.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.actions button{padding:7px 9px;font-size:12px}
-.note{background:#fff7df;border:1px solid #f0dda1;padding:9px;border-radius:9px;font-size:12px}
-footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1px solid var(--line);padding:6px 10px calc(6px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:10px}
-@media(max-width:420px){.row{grid-template-columns:1fr}.stats strong{font-size:19px}}
+.item p{margin:4px 0;white-space:pre-wrap;overflow-wrap:anywhere}.tank-tech{margin-top:6px;padding:7px;border-radius:8px;background:#f3f6f8;font-size:11px}.tank-tech> b{display:block;margin-bottom:5px}
+.hidden{display:none!important}.actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.actions button{padding:6px 7px;font-size:11px}
+.note{background:#fff7df;border:1px solid #f0dda1;padding:7px;border-radius:8px;font-size:11px}
+footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1px solid var(--line);padding:5px 8px calc(5px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:9px}
+@media(max-width:420px){.row{grid-template-columns:1fr}.stats strong{font-size:17px}}
 #printReport{display:none}
 @media print{
   @page{size:A4;margin:14mm}
@@ -49,7 +49,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 </style>
 </head>
 <body>
-<header><h1>TankLog</h1><p>دفتر سوابق فنی مخازن و تجهیزات · نسخه آزمایشی ۰.۱</p></header>
+<header><h1>TankLog</h1><p>دفتر سوابق فنی مخازن و تجهیزات</p></header>
 <main>
 <div class="tabs no-print">
 <button class="tab active" data-tab="home">نمای کلی</button>
@@ -61,7 +61,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <section id="home">
 <div class="card"><h2>خلاصه دفتر</h2><div class="stats"><button type="button" class="stat stat-link" data-go-tab="tanks"><strong id="tankCount">0</strong><span>مخزن</span><small>مشاهده فهرست</small></button><button type="button" class="stat stat-link" data-go-tab="records"><strong id="recordCount">0</strong><span>سابقه</span><small>مشاهده سوابق</small></button><button type="button" class="stat stat-link" data-go-tab="tanks"><strong id="equipmentCount">0</strong><span>تگ تجهیز</span><small>مشاهده مخازن</small></button></div></div>
 <div class="card"><h2>آخرین سوابق</h2><div id="recent"></div></div>
-<div class="note">نسخه آزمایشی است. اطلاعات روی همین مرورگر ذخیره می‌شوند؛ پاک‌کردن داده‌های مرورگر یا تعویض دستگاه ممکن است آن‌ها را حذف کند. مرتب خروجی پشتیبان بگیرید.</div>
+<div class="note">اطلاعات روی همین مرورگر ذخیره می‌شوند؛ برای جلوگیری از ازدست‌رفتن سوابق، به‌طور منظم خروجی پشتیبان بگیرید.</div>
 </section>
 <section id="tanks" class="hidden">
 <div class="card"><h2>فهرست مخازن</h2><input id="tankSearch" placeholder="جست‌وجوی تگ مخزن یا تجهیز…" autocomplete="off"><div id="tankList"></div></div>
@@ -112,7 +112,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 </section>
 </main>
 <section id="printReport" aria-hidden="true"></section>
-<footer>نسخه آزمایشی · اطلاعات فنی حساس را فقط مطابق سیاست‌های محل کار ذخیره کنید.</footer>
+<footer>اطلاعات فنی حساس را فقط مطابق سیاست‌های محل کار ذخیره کنید.</footer>
 <script>
 (function(){
 const KEY='tanklog_v01_data';
@@ -220,7 +220,7 @@ $('printSelectedReports').onclick=()=>{
  const tank=db.tanks.find(t=>t.id===reportTankId);const records=db.records.filter(r=>r.tankId===reportTankId&&selectedReportIds.has(r.id));
  if(!records.length){alert('حداقل یک سابقه را برای گزارش انتخاب کنید.');return}
  const html=reportPrintHtml(tank,records);const title=`TankLog-${tank.tag}-${dateForFilename()}`;
- const docHtml=`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe(title)}</title><style>body{font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:right;color:#111;line-height:1.7;padding:16px;max-width:900px;margin:auto}h1{font-size:22px;text-align:center}h2{font-size:17px;border-bottom:1px solid #bbb;padding-bottom:6px;margin-top:24px}.report-subtitle{text-align:center;color:#555;border-bottom:1px solid #999;padding-bottom:12px;margin-bottom:18px}.report-meta{display:flex;justify-content:space-between;gap:12px}.report-item{border:1px solid #bbb;border-radius:8px;padding:12px;margin:10px 0;break-inside:avoid}.report-item h3{font-size:15px;margin:0 0 6px}.report-item p{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere}.tank-tech{margin-top:9px;padding:9px;background:#f3f6f8}.tank-tech p{margin:4px 0}.ltr{direction:ltr;unicode-bidi:plaintext;display:inline-block}.toolbar{position:sticky;top:0;background:#fff;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}.toolbar button{font:inherit;background:#17324d;color:#fff;border:0;border-radius:8px;padding:10px 14px;margin-left:8px}.hint{background:#fff4d6;padding:10px;border-radius:8px}@page{size:A4;margin:14mm}@media print{.toolbar,.hint{display:none}body{padding:0}}</style></head><body><div class="toolbar"><button id="printButton">چاپ / ذخیره PDF</button><button id="backButton">بازگشت</button></div><div class="hint">اگر چاپ در آیکون صفحه اصلی باز نشد، گزارش را در Safari باز کنید و از Share → Print → بزرگ‌کردن پیش‌نمایش → Share → Save to Files استفاده کنید.</div>${html}<script>document.getElementById('printButton').addEventListener('click',()=>window.print());document.getElementById('backButton').addEventListener('click',()=>history.back());<\/script></body></html>`;
+ const docHtml=`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe(title)}</title><style>*{box-sizing:border-box}body{font-family:Tahoma,Arial,sans-serif;direction:rtl;text-align:right;color:#111;line-height:1.55;padding:12px;max-width:800px;margin:auto;font-size:12px}h1{font-size:18px;text-align:center;margin:0 0 6px}h2{font-size:14px;border-bottom:1px solid #999;padding-bottom:5px;margin-top:16px;margin-bottom:8px}.report-subtitle{text-align:center;color:#555;border-bottom:1px solid #999;padding-bottom:8px;margin-bottom:12px;font-size:11px}.report-meta{display:flex;justify-content:space-between;gap:10px;font-size:11px}.report-item{border:1px solid #bbb;border-radius:4px;padding:8px;margin:7px 0;break-inside:avoid}.report-item h3{font-size:12px;margin:0 0 4px}.report-item p{margin:3px 0;white-space:pre-wrap;overflow-wrap:anywhere}.tank-tech{margin-top:6px;padding:6px;background:#f5f6f7}.tank-tech p{margin:3px 0}.ltr{direction:ltr;unicode-bidi:plaintext;display:inline-block}.toolbar{position:sticky;top:0;background:#fff;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:10px}.toolbar button{font:inherit;font-size:12px;background:#17324d;color:#fff;border:0;border-radius:5px;padding:8px 11px;margin-left:6px}.hint{background:#f7f7f7;padding:8px;border-radius:4px;font-size:11px}@page{size:A4 portrait;margin:12mm}@media print{.toolbar,.hint{display:none!important}body{padding:0;max-width:none;margin:0;font-size:10pt;line-height:1.45}h1{font-size:16pt}h2{font-size:12pt;margin-top:5mm;margin-bottom:2mm}.report-subtitle{font-size:9pt;padding-bottom:2mm;margin-bottom:3mm}.report-meta{font-size:9pt}.report-item{border:0.5pt solid #aaa;border-radius:1mm;padding:2.5mm;margin:2mm 0;break-inside:avoid}.report-item h3{font-size:10pt;margin-bottom:1mm}.report-item p{margin:0.7mm 0}.tank-tech{padding:1.5mm;margin-top:1.5mm;background:#f7f7f7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="toolbar"><button id="printButton">چاپ / ذخیره PDF</button><button id="backButton">بازگشت</button></div><div class="hint">اگر چاپ در آیکون صفحه اصلی باز نشد، گزارش را در Safari باز کنید و از Share → Print → بزرگ‌کردن پیش‌نمایش → Share → Save to Files استفاده کنید.</div>${html}<script>document.getElementById('printButton').addEventListener('click',()=>window.print());document.getElementById('backButton').addEventListener('click',()=>history.back());<\/script></body></html>`;
  // iOS Home Screen apps may ignore window.print(). Open the generated report in a browser tab first.
  // sessionStorage is set before opening so the same-origin tab can read the report HTML.
  try{
