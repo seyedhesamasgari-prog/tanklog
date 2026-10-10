@@ -31,6 +31,8 @@ textarea{min-height:52px;resize:vertical}
 .hidden{display:none!important}.actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.actions button{padding:6px 7px;font-size:11px}
 .status-badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}.status-in{background:#e2f5e9;color:#176b36}.status-work{background:#fff0d7;color:#8a4c00}.status-out{background:#fde7e7;color:#9c2424}.status-unknown{background:#e9edf0;color:#52616b}.note{background:#fff7df;border:1px solid #f0dda1;padding:7px;border-radius:8px;font-size:11px}
 footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1px solid var(--line);padding:5px 8px calc(5px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:9px}
+.creator-credit{margin-top:3px;color:var(--navy);font-size:10px;font-weight:500}
+.creator-credit strong{font-weight:750}
 @media(max-width:420px){.row{grid-template-columns:1fr}.stats strong{font-size:17px}}
 
 #printReport{display:none!important}
@@ -137,7 +139,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 </section>
 </main>
 <div id="printReport" dir="rtl" lang="fa" aria-hidden="true"></div>
-<footer>اطلاعات فنی حساس را فقط مطابق سیاست‌های محل کار ذخیره کنید.</footer>
+<footer><div>اطلاعات فنی حساس را فقط مطابق سیاست‌های محل کار ذخیره کنید.</div><div class="creator-credit">طراحی و توسعه: <strong>سیدحسام عسگری</strong></div></footer>
 <script>
 (function(){
 const KEY='tanklog_v01_data';
