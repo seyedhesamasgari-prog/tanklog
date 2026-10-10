@@ -30,6 +30,29 @@ textarea{min-height:52px;resize:vertical}
 .status-badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap}.status-in{background:#e2f5e9;color:#176b36}.status-work{background:#fff0d7;color:#8a4c00}.status-out{background:#fde7e7;color:#9c2424}.status-unknown{background:#e9edf0;color:#52616b}.note{background:#fff7df;border:1px solid #f0dda1;padding:7px;border-radius:8px;font-size:11px}
 footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1px solid var(--line);padding:5px 8px calc(5px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:9px}
 @media(max-width:420px){.row{grid-template-columns:1fr}.stats strong{font-size:17px}}
+
+#printReport{display:none!important}
+@media print{
+  @page{size:A4;margin:14mm 12mm 16mm}
+  body{background:#fff!important;color:#111!important;font-size:10pt;line-height:1.55}
+  body.print-mode>header,body.print-mode>main,body.print-mode>footer{display:none!important}
+  body.print-mode>#printReport{display:block!important}
+  #printReport{display:none}
+  .pdf-title{text-align:center;border-bottom:2px solid #17324d;padding-bottom:10px;margin-bottom:14px}
+  .pdf-title h1{font-size:18pt;margin:0 0 4px}
+  .pdf-title p{font-size:10pt;margin:0;color:#444}
+  .pdf-section{margin:12px 0;break-inside:avoid}
+  .pdf-section h2{font-size:12pt;background:#edf2f5;padding:6px 8px;border:1px solid #ccd6dd}
+  .pdf-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;border:1px solid #ccd6dd;padding:9px}
+  .pdf-meta div{border-bottom:1px dotted #d2d2d2;padding:3px 0;overflow-wrap:anywhere}
+  .pdf-meta b{font-weight:700}
+  .pdf-record{border:1px solid #cbd3d9;padding:8px;margin:8px 0;break-inside:avoid;page-break-inside:avoid}
+  .pdf-record h3{font-size:11pt;margin:0 0 5px}
+  .pdf-record .pdf-record-meta{font-size:9pt;color:#333;margin-bottom:5px}
+  .pdf-record .pdf-record-text{white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal}
+  .pdf-footer{margin-top:18px;border-top:1px solid #999;padding-top:6px;text-align:center;font-size:8pt;color:#555}
+}
+
 </style>
 </head>
 <body>
@@ -94,6 +117,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <section id="tankReports" class="hidden">
 <div class="card"><h2>گزارش مخازن</h2><p class="muted">مخزن را از فهرست مرتب‌شده انتخاب کنید تا سوابق همان مخزن به ترتیب تاریخ نمایش داده شوند.</p><input id="reportTankSearch" placeholder="جست‌وجوی مخزن…" autocomplete="off"><div id="reportTankList"></div></div>
 <div class="card hidden" id="tankReportDetail"><h2>سوابق مخزن <span id="selectedReportTank" class="tag"></span></h2><p class="muted">سوابق از جدیدترین به قدیمی‌ترین مرتب شده‌اند. برای گزارش سفارشی، فقط موارد دلخواه را تیک بزنید یا بازه تاریخ را محدود کنید.</p>
+<div class="actions no-print"><button class="primary" id="printFullTankReport" type="button">چاپ / ذخیره گزارش کامل PDF</button></div>
 <div class="row"><div><label for="reportDateFrom">از تاریخ شمسی (اختیاری)</label><input id="reportDateFrom" placeholder="۱۴۰۵/۰۱/۰۱" inputmode="numeric" dir="ltr"></div><div><label for="reportDateTo">تا تاریخ شمسی (اختیاری)</label><input id="reportDateTo" placeholder="۱۴۰۵/۱۲/۲۹" inputmode="numeric" dir="ltr"></div></div>
 <div class="actions"><button class="secondary" id="reportSelectAll" type="button">انتخاب همه موارد نمایان</button><button class="secondary" id="reportClearSelection" type="button">لغو انتخاب</button></div><p id="reportSelectionCount" class="muted">۰ سابقه انتخاب شده</p><div id="tankReportRecords"></div></div>
 </section>
@@ -107,6 +131,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <div class="card"><h2>وضعیت ذخیره‌سازی</h2><p id="storageStatus" class="muted">در حال بررسی…</p></div>
 </section>
 </main>
+<div id="printReport" dir="rtl" lang="fa" aria-hidden="true"></div>
 <footer>اطلاعات فنی حساس را فقط مطابق سیاست‌های محل کار ذخیره کنید.</footer>
 <script>
 (function(){
@@ -172,6 +197,41 @@ function renderTankReports(){
  $('reportSelectionCount').textContent=`${records.filter(r=>selectedReportIds.has(r.id)).length} سابقه از ${records.length} مورد نمایان انتخاب شده است.`;
 }
 
+
+function printFullTankReport(){
+ const tank=db.tanks.find(t=>t.id===reportTankId);
+ if(!tank){alert('ابتدا یک مخزن را انتخاب کنید.');return}
+ const status=statusLabel(tank.status);
+ const fields=[
+  ['تگ مخزن',tank.tag],['نوع مخزن',tank.type],['محل / واحد',tank.location],['وضعیت عملیاتی',status],
+  ['نوع آنتن',tank.antennaType],['تجهیزات / تگ‌های مرتبط',tank.equipment],
+  ['Upper Reference Position',tank.upperReferencePosition?`${tank.upperReferencePosition} m`:'' ],
+  ['Tank Bottom Position',tank.tankBottomPosition?`${tank.tankBottomPosition} m`:'' ],
+  ['Maximum Safe Fill',tank.maximumSafeFill?`${tank.maximumSafeFill} m`:'' ],
+  ['Offset to Roof',tank.offsetToRoof?`${tank.offsetToRoof} m`:'' ],
+  ['Nozzle Length',tank.nozzleLength?`${tank.nozzleLength} m`:'' ],
+  ['Stilling Well Diameter',tank.stillingWellDiameter?`${tank.stillingWellDiameter} m`:'' ],
+  ['Reference Innage',tank.referenceInnage?`${tank.referenceInnage} m`:'' ],
+  ['Reference Ullage',tank.referenceUllage?`${tank.referenceUllage} m`:'' ],
+  ['Accept Reference',tank.acceptReference],['Accept Reference Status',tank.acceptReferenceStatus],
+  ['یادداشت فنی',tank.notes]
+ ].filter(([label,value])=>value!==undefined&&value!==null&&String(value).trim()!=='');
+ const records=db.records.filter(r=>r.tankId===tank.id).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ const generated=formatDate(dateToday());
+ const fieldHtml=fields.map(([label,value])=>`<div><b>${safe(label)}:</b> ${safe(value)}</div>`).join('');
+ const recordsHtml=records.length?records.map((r,i)=>`<article class="pdf-record"><h3>${toFaDigits(String(records.length-i))}. ${safe(r.title||'بدون عنوان')}</h3><div class="pdf-record-meta">تاریخ: ${safe(formatDate(r.date))}　|　تگ تجهیز: <span dir="ltr">${safe(r.tag||'ثبت نشده')}</span>　|　نوع سابقه: ${safe(r.type||'دسته‌بندی نشده')}</div><div class="pdf-record-text">${safe(r.text||'شرح تکمیلی ثبت نشده است')}</div></article>`).join(''):'<p>برای این مخزن سابقه فنی ثبت نشده است.</p>';
+ const root=$('printReport');
+ root.innerHTML=`<div class="pdf-title"><h1>گزارش کامل سوابق فنی مخزن</h1><p>TankLog | دفتر سوابق فنی مخازن و تجهیزات</p></div>
+ <section class="pdf-section"><h2>۱. مشخصات مخزن و تجهیزات</h2><div class="pdf-meta">${fieldHtml||'<div>مشخصات فنی ثبت نشده است.</div>'}</div></section>
+ <section class="pdf-section"><h2>۲. سوابق فنی ثبت‌شده (${toFaDigits(String(records.length))} مورد)</h2>${recordsHtml}</section>
+ <div class="pdf-footer">تاریخ تهیه گزارش: ${safe(generated)} | این گزارش از اطلاعات ذخیره‌شده در TankLog تهیه شده است.</div>`;
+ document.body.classList.add('print-mode');
+ root.setAttribute('aria-hidden','false');
+ const cleanup=()=>{document.body.classList.remove('print-mode');root.setAttribute('aria-hidden','true');window.removeEventListener('afterprint',cleanup)};
+ window.addEventListener('afterprint',cleanup);
+ try{window.print()}catch(err){cleanup();alert('مرورگر نتوانست پنجره چاپ را باز کند. از منوی اشتراک‌گذاری مرورگر گزینه Print را امتحان کنید.')}
+ setTimeout(()=>{if(document.body.classList.contains('print-mode'))cleanup()},120000);
+}
 function render(){
 $('tankCount').textContent=db.tanks.length;$('recordCount').textContent=db.records.length;
 $('statusInCount').textContent=db.tanks.filter(t=>t.status==='in_service').length;
@@ -247,6 +307,7 @@ $('exportCsv').onclick=()=>{
  try{const blob=makeZip(files);deliverFile('TankLog-Excel-'+dateForFilename()+'.xlsx',blob).then(ok=>{if(!ok)alert('فایل ساخته شد، اما اشتراک‌گذاری یا ذخیره‌سازی شروع نشد. لطفاً برنامه را مستقیماً در Safari باز کنید و دوباره تلاش کنید.');}).catch(()=>alert('ساخت یا ارسال فایل Excel ناموفق بود. برنامه را در Safari باز کنید و دوباره تلاش کنید.'));}catch(err){alert('ساخت فایل Excel ناموفق بود: '+(err&&err.message?err.message:'خطای ناشناخته'));}
 };
 $('reportTankSearch').addEventListener('input',renderTankReports);
+$('printFullTankReport').addEventListener('click',printFullTankReport);
 ['reportDateFrom','reportDateTo'].forEach(id=>$(id).addEventListener('input',renderTankReports));
 $('reportSelectAll').onclick=()=>{const ids=[...document.querySelectorAll('[data-report-check]')].map(x=>x.dataset.reportCheck);ids.forEach(id=>selectedReportIds.add(id));renderTankReports()};
 $('reportClearSelection').onclick=()=>{selectedReportIds.clear();renderTankReports()};
