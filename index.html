@@ -14,7 +14,7 @@ header{background:var(--navy);color:#fff;padding:9px 10px 8px;padding-top:calc(9
 @media(max-width:420px){.app-logo-wrap{width:50px;height:50px;flex-basis:50px}.app-brand{gap:10px;min-height:50px}}
 header h1{font-size:16px;margin:0}header p{margin:3px 0 0;color:#d8e6ee;font-size:11px}
 main{max-width:760px;margin:auto;padding:6px 6px 64px}
-.tabs{display:flex;gap:5px;position:sticky;top:0;background:var(--bg);padding:5px 0;z-index:2}
+.tabs{display:flex;gap:5px;position:sticky;top:0;background:var(--bg);padding:5px 0;z-index:2;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}.tab{flex:0 0 auto;white-space:nowrap}
 button,.btn{border:0;border-radius:9px;padding:6px 7px;font:inherit;font-size:11px;cursor:pointer}
 .tab{background:#e2eaf0;color:var(--navy);flex:1}.tab.active{background:var(--navy);color:white}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px;margin:6px 0;box-shadow:0 2px 7px #17324d08}
@@ -68,6 +68,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <div class="tabs no-print">
 <button class="tab active" data-tab="home">نمای کلی</button>
 <button class="tab" data-tab="tanks">مخازن</button>
+<button class="tab" data-tab="equipmentTags">تگ تجهیزات</button>
 <button class="tab" data-tab="records">سوابق فنی</button>
 <button class="tab" data-tab="globalSearch">جست‌وجوی سراسری</button>
 <button class="tab" data-tab="tankReports">گزارش مخازن</button>
@@ -79,7 +80,6 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <div class="note">اطلاعات روی همین مرورگر ذخیره می‌شوند؛ برای جلوگیری از ازدست‌رفتن سوابق، به‌طور منظم خروجی پشتیبان بگیرید.</div>
 </section>
 <section id="tanks" class="hidden">
-<div class="card"><h2>فهرست مخازن</h2><input id="tankSearch" placeholder="جست‌وجوی تگ مخزن یا تجهیز…" autocomplete="off"><div id="tankList"></div></div>
 <div class="card"><h2>ثبت / ویرایش مخزن</h2>
 <form id="tankForm">
 <input type="hidden" id="tankId">
@@ -97,6 +97,8 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <label for="tankNotes">توضیحات</label><textarea id="tankNotes" placeholder="اطلاعات تکمیلی مخزن"></textarea>
 <button class="primary full" type="submit">ذخیره مخزن</button><button class="secondary full hidden" id="cancelTank" type="button">لغو ویرایش</button>
 </form></div>
+
+<div class="card"><h2>فهرست مخازن</h2><input id="tankSearch" placeholder="جست‌وجوی تگ مخزن یا تجهیز…" autocomplete="off"><div id="tankList"></div></div>
 </section>
 <section id="records" class="hidden">
 <div class="card"><h2>ثبت سابقه فنی</h2>
@@ -121,6 +123,10 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <div class="card"><h2>مخازن و تجهیزات مرتبط</h2><div id="globalTankResults"><p class="muted">نتیجه‌ای برای نمایش نیست.</p></div></div>
 <div class="card"><h2>سوابق فنی مرتبط</h2><div id="globalRecordResults"><p class="muted">نتیجه‌ای برای نمایش نیست.</p></div></div>
 </section>
+<section id="equipmentTags" class="hidden">
+<div class="card"><h2>تگ‌های تجهیزات</h2><p class="muted">تگ‌ها از مشخصات تجهیزات ثبت‌شده برای هر مخزن استخراج می‌شوند. روی هر تگ بزنید تا تمام سوابقی که تگ در عنوان، شرح یا فیلد تگ تجهیز آن‌ها آمده نمایش داده شود.</p><input id="equipmentTagSearch" type="search" placeholder="جست‌وجوی تگ تجهیز یا مخزن…" autocomplete="off" autocapitalize="off" spellcheck="false"><div id="equipmentTagList"></div></div>
+<div class="card hidden" id="equipmentTagDetail"><h2>سوابق تگ <span id="selectedEquipmentTag" class="tag"></span></h2><p id="equipmentTagSummary" class="muted"></p><div id="equipmentTagRecords"></div></div>
+</section>
 <section id="tankReports" class="hidden">
 <div class="card"><h2>گزارش مخازن</h2><p class="muted">مخزن را از فهرست مرتب‌شده انتخاب کنید تا سوابق همان مخزن به ترتیب تاریخ نمایش داده شوند.</p><input id="reportTankSearch" placeholder="جست‌وجوی مخزن…" autocomplete="off"><div id="reportTankList"></div></div>
 <div class="card hidden" id="tankReportDetail"><h2>سوابق مخزن <span id="selectedReportTank" class="tag"></span></h2><p class="muted">سوابق از جدیدترین به قدیمی‌ترین مرتب شده‌اند. برای گزارش سفارشی، فقط موارد دلخواه را تیک بزنید یا بازه تاریخ را محدود کنید.</p>
@@ -143,7 +149,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <script>
 (function(){
 const KEY='tanklog_v01_data';
-let reportTankId=''; let selectedReportIds=new Set();
+let reportTankId=''; let selectedReportIds=new Set(); let selectedEquipmentTag='';
 let db={tanks:[],records:[]};
 const $=id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -187,6 +193,36 @@ function renderGlobalSearch(){
  $('globalSearchSummary').textContent=q?`${matchingTanks.length} مخزن/تجهیز و ${records.length} سابقه مرتبط پیدا شد.`:'برای شروع، عبارت موردنظر را وارد کنید.';
  $('globalTankResults').innerHTML=!q?'<p class="muted">عبارت جست‌وجو را وارد کنید.</p>':matchingTanks.length?matchingTanks.map(t=>`<div class="item"><div class="itemtop"><h3 class="tag">${safe(t.tag)}</h3><span class="status-badge ${statusClass(t.status)}">${safe(statusLabel(t.status))}</span></div><p class="muted">${safe(t.location||'محل ثبت نشده')} · ${db.records.filter(r=>r.tankId===t.id).length} سابقه</p>${t.equipment?`<p><b>تجهیزات مرتبط:</b> ${safe(t.equipment)}</p>`:''}${t.antennaType?`<p><b>نوع آنتن:</b> ${safe(t.antennaType)}</p>`:''}<div class="actions"><button class="secondary" type="button" data-global-edit-tank="${safe(t.id)}">مشاهده / ویرایش مخزن</button><button class="secondary" type="button" data-global-add-record="${safe(t.id)}">ثبت سابقه</button><button class="secondary" type="button" data-global-tank-records="${safe(t.id)}">نمایش سوابق این مخزن</button></div></div>`).join(''):'<p class="muted">مخزن یا تجهیزی مطابق عبارت پیدا نشد.</p>';
  $('globalRecordResults').innerHTML=!q?'<p class="muted">عبارت جست‌وجو را وارد کنید.</p>':records.length?records.map(r=>`<div class="item"><div class="itemtop"><h3>${safe(r.title||'بدون عنوان')}</h3><span class="tag">${safe(r.tag||'بدون تگ')}</span></div><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))}</p><p><b>نوع سابقه:</b> ${safe(r.type||'دسته‌بندی نشده')}</p><p>${safe(r.text||'بدون شرح تکمیلی')}</p><div class="actions"><button class="secondary" type="button" data-global-edit-record="${safe(r.id)}">ویرایش سابقه</button><button class="secondary" type="button" data-global-open-tank-report="${safe(r.tankId)}">گزارش این مخزن</button></div></div>`).join(''):'<p class="muted">سابقه‌ای مطابق عبارت پیدا نشد.</p>';
+}
+function equipmentTagEntries(){
+ const entries=new Map();
+ db.tanks.forEach(t=>{
+  const raw=String(t.equipment||'');
+  const tags=raw.split(/[,،;؛\n\r]+/).map(x=>x.trim()).filter(Boolean);
+  tags.forEach(tag=>{
+   const key=normalizeSearchText(tag);
+   if(!key)return;
+   if(!entries.has(key))entries.set(key,{tag, tanks:[]});
+   const entry=entries.get(key);if(!entry.tanks.some(x=>x.id===t.id))entry.tanks.push({id:t.id,tag:t.tag});
+  });
+ });
+ return [...entries.values()].sort((a,b)=>a.tag.localeCompare(b.tag));
+}
+function recordsForEquipmentTag(tag){
+ const q=normalizeSearchText(tag);if(!q)return [];
+ return db.records.filter(r=>normalizeSearchText([r.tag,r.title,r.text].join(' ')).includes(q)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+}
+function renderEquipmentTags(){
+ const list=$('equipmentTagList');if(!list)return;
+ const q=normalizeSearchText($('equipmentTagSearch')?.value||'');
+ const entries=equipmentTagEntries().filter(e=>!q||normalizeSearchText([e.tag,...e.tanks.map(t=>t.tag)].join(' ')).includes(q));
+ list.innerHTML=entries.length?entries.map(e=>`<div class="item"><div class="itemtop"><h3 class="tag">${safe(e.tag)}</h3><span class="muted">${recordsForEquipmentTag(e.tag).length} سابقه</span></div><p><b>مخزن${e.tanks.length>1?'ها':''}:</b> ${e.tanks.map(t=>safe(t.tag)).join('، ')}</p><div class="actions"><button class="primary" type="button" data-open-equipment-tag="${safe(e.tag)}">نمایش سوابق این تگ</button></div></div>`).join(''):'<p class="muted">تگی مطابق جست‌وجو پیدا نشد. تگ‌ها را در بخش «ثبت / ویرایش مخزن» وارد کنید و با ویرگول از هم جدا کنید.</p>';
+ const detail=$('equipmentTagDetail');
+ if(!selectedEquipmentTag||!equipmentTagEntries().some(e=>normalizeSearchText(e.tag)===normalizeSearchText(selectedEquipmentTag))){detail.classList.add('hidden');return;}
+ detail.classList.remove('hidden');$('selectedEquipmentTag').textContent=selectedEquipmentTag;
+ const recs=recordsForEquipmentTag(selectedEquipmentTag);
+ $('equipmentTagSummary').textContent=`${recs.length} سابقه که تگ ${selectedEquipmentTag} در فیلد تگ، عنوان یا شرح آن درج شده است.`;
+ $('equipmentTagRecords').innerHTML=recs.length?recs.map(r=>`<div class="item"><div class="itemtop"><h3>${safe(r.title||'بدون عنوان')}</h3><span class="tag">${safe(r.tag||'بدون تگ')}</span></div><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))} · ${safe(r.type||'دسته‌بندی نشده')}</p><p>${safe(r.text||'بدون شرح تکمیلی')}</p><div class="actions"><button class="secondary" type="button" data-open-record="${safe(r.id)}">رفتن به سابقه</button></div></div>`).join(''):'<p class="muted">هنوز سابقه‌ای با این تگ ثبت نشده است. برای پیدا شدن، تگ باید در فیلد تگ تجهیز، عنوان یا شرح سابقه درج شده باشد.</p>';
 }
 function renderTankReports(){
  const q=($('reportTankSearch')?.value||'').toLowerCase();
@@ -264,6 +300,7 @@ const recHtml=r=>`<div class="item"><div class="itemtop"><h3>${safe(r.title)}</h
 $('recordList').innerHTML=recs.length?recs.map(recHtml).join(''):'<p class="muted">سابقه‌ای مطابق فیلترها یا جست‌وجو پیدا نشد.</p>';
 $('recent').innerHTML=db.records.length?db.records.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4).map(r=>`<button type="button" class="item recent-link" data-open-record="${safe(r.id)}" style="display:block;width:100%;text-align:right;color:inherit;font:inherit"><b>${safe(r.title)}</b><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))} · ${safe(r.type||'دسته‌بندی نشده')}</p><p>${safe(r.text||'')}</p><span class="muted">برای مشاهده سابقه بزنید ←</span></button>`).join(''):'<p class="muted">برای شروع، یک مخزن ثبت کنید و سپس سابقه فنی اضافه کنید.</p>';
 renderTankReports();
+renderEquipmentTags();
 $('storageStatus').textContent=`${db.tanks.length} مخزن و ${db.records.length} سابقه در حافظه محلی این مرورگر ثبت شده است. این داده‌ها به‌صورت خودکار با دستگاه دیگری همگام نمی‌شوند.`;
 renderGlobalSearch();
 }
@@ -273,8 +310,10 @@ $('cancelTank').onclick=()=>{$('tankForm').reset();$('tankId').value='';$('cance
 $('cancelRecord').onclick=()=>{$('recordForm').reset();$('recordId').value='';$('recordDate').value=formatDate(dateToday());$('cancelRecord').classList.add('hidden')};
 $('tankSearch').addEventListener('input',render);$('recordSearch').addEventListener('input',render);$('recordTankFilter').addEventListener('change',render);$('recordTypeFilter').addEventListener('change',render);
 $('globalSearchInput').addEventListener('input',renderGlobalSearch);$('globalSearchClear').addEventListener('click',()=>{$('globalSearchInput').value='';renderGlobalSearch();$('globalSearchInput').focus()});
+$('equipmentTagSearch').addEventListener('input',renderEquipmentTags);
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
 if(b.dataset.goTab){tab(b.dataset.goTab);window.scrollTo(0,0);return}
+if(b.dataset.openEquipmentTag){selectedEquipmentTag=b.dataset.openEquipmentTag;renderEquipmentTags();setTimeout(()=>$('equipmentTagDetail').scrollIntoView({behavior:'smooth',block:'start'}),50);return}
 if(b.dataset.globalEditTank){const t=db.tanks.find(x=>x.id===b.dataset.globalEditTank);if(!t)return;tab('tanks');const editBtn=document.querySelector(`[data-edit-tank="${t.id}"]`);if(editBtn)editBtn.click();return}
 if(b.dataset.globalAddRecord){tab('records');$('recordTank').value=b.dataset.globalAddRecord;window.scrollTo(0,0);return}
 if(b.dataset.globalTankRecords){reportTankId=b.dataset.globalTankRecords;selectedReportIds.clear();tab('tankReports');renderTankReports();setTimeout(()=>$('tankReportDetail').scrollIntoView({behavior:'smooth',block:'start'}),60);return}
