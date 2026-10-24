@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#17324d">
-<link rel="manifest" href="./manifest.json">
+<link rel="manifest" href="./manifest.json"><link rel="apple-touch-icon" href="./icon-192.png">
 <title>TankLog | دفتر سوابق فنی</title>
 <style>
 :root{--navy:#17324d;--blue:#286a8e;--bg:#f3f6f8;--card:#fff;--ink:#17212b;--muted:#62717e;--line:#dce4e9;--danger:#a63232}
@@ -72,6 +72,12 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 .tank-table-image{display:block;width:100%;height:auto;max-width:100%;object-fit:contain;image-rendering:auto}
 .tank-table-image-hint{font-size:10px;color:var(--muted);line-height:1.7}
 @media print{body.appendix-print main section{display:none!important}body.appendix-print #tankTableAppendix{display:block!important}.tank-table-image{width:100%;max-width:100%}.tank-table-image-wrap{border:0;padding:0}}
+
+/* v28 overrides */
+body{font-size:13px}
+input,textarea,select{font-size:16px!important}
+@media(min-width:900px){main,.app-brand{max-width:1000px}}
+.backup-warn{background:#fde7e7;border:1px solid #f0b4b4;color:#7a1f1f;padding:8px;border-radius:8px;margin:6px 0;font-size:12px}
 </style>
 </head>
 <body>
@@ -93,7 +99,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <div class="section-heading status-heading"><div><h3>وضعیت عملیاتی مخازن</h3><p class="section-subtitle">بر اساس وضعیت ثبت‌شده برای هر مخزن</p></div></div><div class="stats status-stats"><button type="button" class="stat stat-link" data-go-tab="tanks"><strong id="statusInCount">0</strong><span>در سرویس</span></button><button type="button" class="stat stat-link" data-go-tab="tanks"><strong id="statusWorkCount">0</strong><span>در حال کالیبره و تعمیرات</span></button><button type="button" class="stat stat-link" data-go-tab="tanks"><strong id="statusOutCount">0</strong><span>خارج از سرویس</span></button><button type="button" class="stat stat-link" data-go-tab="tanks"><strong id="statusUnknownCount">0</strong><span>وضعیت تعیین‌نشده</span></button></div></div>
 <div class="card dashboard-card"><div class="section-heading"><div><h2>دسترسی سریع</h2><p class="section-subtitle">کارهای پرکاربرد بدون جست‌وجو در تب‌ها</p></div></div><div class="quick-actions"><button type="button" data-go-tab="records"><span class="quick-icon quick-add">＋</span><span><b>ثبت سابقه فنی</b><small>ثبت تعمیر یا فعالیت جدید</small></span><span class="quick-arrow">←</span></button><button type="button" data-go-tab="globalSearch"><span class="quick-icon quick-search">⌕</span><span><b>جست‌وجوی سراسری</b><small>پیدا کردن گزارش یا تجهیز</small></span><span class="quick-arrow">←</span></button><button type="button" data-go-tab="tanks"><span class="quick-icon quick-tank">▦</span><span><b>مدیریت مخازن</b><small>مشاهده و ویرایش مخازن</small></span><span class="quick-arrow">←</span></button><button type="button" data-go-tab="backup"><span class="quick-icon quick-backup">↥</span><span><b>پشتیبان‌گیری</b><small>حفظ یک نسخه از اطلاعات</small></span><span class="quick-arrow">←</span></button></div></div>
 <div class="card dashboard-card"><div class="section-heading"><div><h2>آخرین سوابق فنی</h2><p class="section-subtitle">چهار سابقه اخیر بر اساس تاریخ ثبت‌شده</p></div><button type="button" class="secondary dashboard-view-all" data-go-tab="records">همه سوابق</button></div><div id="recent"></div></div>
-<div class="note dashboard-note">اطلاعات روی همین مرورگر ذخیره می‌شوند و خودکار با دستگاه دیگری همگام نمی‌شوند. برای جلوگیری از ازدست‌رفتن سوابق، به‌طور منظم خروجی پشتیبان JSON بگیرید.</div>
+<div id="backupWarn" class="backup-warn hidden"></div><div class="note dashboard-note">اطلاعات روی همین مرورگر ذخیره می‌شوند و خودکار با دستگاه دیگری همگام نمی‌شوند. برای جلوگیری از ازدست‌رفتن سوابق، به‌طور منظم خروجی پشتیبان JSON بگیرید.</div>
 </section>
 <section id="tanks" class="hidden">
 <div class="card"><h2>ثبت / ویرایش مخزن</h2>
@@ -102,7 +108,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <label for="tankTag">تگ مخزن *</label><input id="tankTag" required placeholder="مثلاً TK-2011B" dir="ltr" autocomplete="off">
 <div class="row"><div><label for="tankType">نوع مخزن</label><input id="tankType" placeholder="مثلاً سقف ثابت"></div><div><label for="tankLocation">واحد / محل</label><input id="tankLocation" placeholder="مثلاً Cr-40-04"></div></div>
 <label for="tankStatus">وضعیت عملیاتی مخزن</label><select id="tankStatus"><option value="">وضعیت را مشخص کنید</option><option value="in_service">در سرویس</option><option value="calibration_maintenance">در حال کالیبره و تعمیرات</option><option value="out_of_service">خارج از سرویس</option></select>
-<label for="antennaType">نوع آنتن رادار FlexLine 990 *</label><select id="antennaType" required><option value="Free Space">Free Space — فضای آزاد</option><option value="Stilling Well">Stilling Well — استیلینگ‌ول</option></select>
+<label for="antennaType">نوع آنتن رادار FlexLine 990 *</label><select id="antennaType" required><option value="Free Space">Free Space — فضای آزاد</option><option value="Stilling Well">Stilling Well — استیلینگ‌ول</option><option value="High pressure H04">High pressure H04 — فشار بالا + Guide Pipe</option><option value="Servo 854H">Servo 854H — سروو</option></select>
 <div id="legacyReferenceFields" hidden>
 <input id="upperReferencePosition" type="number" step="any" inputmode="decimal">
 <input id="tankBottomPosition" type="number" step="any" inputmode="decimal">
@@ -171,7 +177,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <button class="secondary full" id="exportCsv">دریافت فایل Excel (ذخیره در Files)</button>
 <label for="importFile">بازیابی پشتیبان JSON</label><input id="importFile" type="file" accept=".json,application/json">
 <div class="note" style="margin-top:14px">هشدار: بازیابی پشتیبان جایگزین اطلاعات فعلی می‌شود. قبل از بازیابی، خروجی پشتیبان فعلی را ذخیره کنید.</div>
-<button class="danger full" id="clearAll">حذف همه اطلاعات</button></div>
+<button class="secondary full" id="undoLast" type="button">بازگشت به حالت پیش از آخرین حذف یا بازیابی</button><button class="danger full" id="clearAll">حذف همه اطلاعات</button></div>
 <div class="card"><h2>وضعیت ذخیره‌سازی</h2><p id="storageStatus" class="muted">در حال بررسی…</p></div>
 </section>
 </main>
@@ -179,13 +185,18 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;border-top:1p
 <footer><div>اطلاعات فنی حساس را فقط مطابق سیاست‌های محل کار ذخیره کنید.</div><div class="creator-credit">طراحی و توسعه: <strong>سیدحسام عسگری</strong></div></footer>
 <script>
 (function(){
-const KEY='tanklog_v01_data';
+const KEY='tanklog_v01_data',BK='tanklog_last_backup',SNAP='tanklog_prev_snapshot';
 let reportTankId=''; let selectedReportIds=new Set(); let selectedEquipmentTag='';
 let db={tanks:[],records:[]};
 const $=id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const x=JSON.parse(raw);if(Array.isArray(x.tanks)&&Array.isArray(x.records))db=x;}}catch(e){}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db));render();return true}catch(e){alert('ذخیره‌سازی انجام نشد. فضای مرورگر را بررسی کنید و فوراً از اطلاعات پشتیبان بگیرید.');return false}}
+
+function snapshot(){try{localStorage.setItem(SNAP,JSON.stringify({at:Date.now(),db}))}catch(e){}}
+function markBackup(){try{localStorage.setItem(BK,String(Date.now()))}catch(e){}render()}
+function backupAgeDays(){try{const v=+localStorage.getItem(BK);return v?Math.floor((Date.now()-v)/864e5):null}catch(e){return null}}
+function mergeDb(x){const ids=new Set(db.tanks.map(t=>t.id)),tags=new Set(db.tanks.map(t=>t.tag.toLowerCase())),rids=new Set(db.records.map(r=>r.id));let at=0,ar=0;const idMap={};x.tanks.forEach(t=>{if(!t||!t.id||!t.tag)return;const ex=db.tanks.find(o=>o.tag.toLowerCase()===String(t.tag).toLowerCase());if(ex){idMap[t.id]=ex.id;return}if(!ids.has(t.id)){db.tanks.push(t);ids.add(t.id);at++}});x.records.forEach(r=>{if(!r||!r.id||rids.has(r.id))return;const tid=idMap[r.tankId]||r.tankId;if(!db.tanks.some(t=>t.id===tid))return;db.records.push({...r,tankId:tid});rids.add(r.id);ar++});return [at,ar]}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function dateToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function persianDigits(s){return String(s).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d))}
@@ -209,7 +220,7 @@ const STATUS_LABELS={in_service:'در سرویس',calibration_maintenance:'در 
 function statusLabel(status){return STATUS_LABELS[status]||'وضعیت تعیین‌نشده'}
 function statusClass(status){return status==='in_service'?'status-in':status==='calibration_maintenance'?'status-work':status==='out_of_service'?'status-out':'status-unknown'}
 function tankTechHtml(t){const fields=[['Upper Reference Position','upperReferencePosition','m'],['Tank Bottom Position','tankBottomPosition','m'],['Maximum Safe Fill','maximumSafeFill','m'],['Offset to Roof','offsetToRoof','m'],['Nozzle Length','nozzleLength','m'],['Stilling Well Diameter','stillingWellDiameter','m'],['Reference Innage','referenceInnage','m'],['Reference Ullage','referenceUllage','m'],['Accept Reference','acceptReference',''],['Accept Reference Status','acceptReferenceStatus','']];const rows=fields.filter(([label,key])=>t[key]!==undefined&&t[key]!==null&&String(t[key]).trim()!=='').map(([label,key,unit])=>`<p><b>${label}:</b> <span dir="ltr">${safe(String(t[key]))}${unit?' '+unit:''}</span></p>`).join('');return rows?`<div class="tank-tech"><b>مشخصات فنی رادار</b>${rows}</div>`:''}
-function syncAntennaFields(){const isWell=$('antennaType').value==='Stilling Well';$('stillingWellField').classList.toggle('hidden',!isWell);$('stillingWellDiameter').disabled=!isWell;if(!isWell)$('stillingWellDiameter').value=''}
+function syncAntennaFields(){const isWell=['Stilling Well','High pressure H04'].includes($('antennaType').value);$('stillingWellField').classList.toggle('hidden',!isWell);$('stillingWellDiameter').disabled=!isWell;if(!isWell)$('stillingWellDiameter').value=''}
 $('antennaType').addEventListener('change',syncAntennaFields);syncAntennaFields();
 function tab(name){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));$(name).classList.remove('hidden');document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));render()}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>tab(b.dataset.tab)));
@@ -242,7 +253,7 @@ function equipmentTagEntries(){
    const entry=entries.get(key);if(!entry.tanks.some(x=>x.id===t.id))entry.tanks.push({id:t.id,tag:t.tag});
   });
  });
- return [...entries.values()].sort((a,b)=>a.tag.localeCompare(b.tag));
+ return [...entries.values()].sort((a,b)=>a.tag.localeCompare(b.tag,'en',{numeric:true}));
 }
 function recordsForEquipmentTag(tag){
  const q=normalizeSearchText(tag);if(!q)return [];
@@ -262,7 +273,7 @@ function renderEquipmentTags(){
 }
 function renderTankReports(){
  const q=($('reportTankSearch')?.value||'').toLowerCase();
- const tanks=db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag));
+ const tanks=db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag,'en',{numeric:true}));
  $('reportTankList').innerHTML=tanks.filter(t=>t.tag.toLowerCase().includes(q)).map(t=>`<button type="button" class="item full secondary" style="text-align:right" data-open-tank-report="${safe(t.id)}"><b class="tag">${safe(t.tag)}</b><span class="muted"> · ${db.records.filter(r=>r.tankId===t.id).length} سابقه</span></button>`).join('')||'<p class="muted">مخزنی پیدا نشد.</p>';
  const detail=$('tankReportDetail'); if(!reportTankId||!db.tanks.some(t=>t.id===reportTankId)){detail.classList.add('hidden');return}
  const tank=db.tanks.find(t=>t.id===reportTankId);detail.classList.remove('hidden');$('selectedReportTank').textContent=tank.tag;
@@ -321,26 +332,26 @@ $('statusWorkCount').textContent=db.tanks.filter(t=>t.status==='calibration_main
 $('statusOutCount').textContent=db.tanks.filter(t=>t.status==='out_of_service').length;
 $('statusUnknownCount').textContent=db.tanks.filter(t=>!STATUS_LABELS[t.status]).length;
 $('equipmentCount').textContent=new Set(db.tanks.flatMap(t=>(t.equipment||'').split(/[,،\n]/).map(x=>x.trim()).filter(Boolean))).size;
-$('recordTank').innerHTML='<option value="">انتخاب مخزن</option>'+db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag)).map(t=>`<option value="${safe(t.id)}">${safe(t.tag)}</option>`).join('');populateRecordTagOptions($('recordTag').value);
+$('recordTank').innerHTML='<option value="">انتخاب مخزن</option>'+db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag,'en',{numeric:true})).map(t=>`<option value="${safe(t.id)}">${safe(t.tag)}</option>`).join('');populateRecordTagOptions($('recordTag').value);
 
-const tq=($('tankSearch')?.value||'').toLowerCase();
-const tanks=db.tanks.filter(t=>(t.tag+' '+t.type+' '+t.location+' '+t.equipment+' '+t.notes+' '+(t.antennaType||'')+' '+statusLabel(t.status)).toLowerCase().includes(tq)).sort((a,b)=>a.tag.localeCompare(b.tag));
+const tq=normalizeSearchText($('tankSearch')?.value||'');
+const tanks=db.tanks.filter(t=>normalizeSearchText(t.tag+' '+t.type+' '+t.location+' '+t.equipment+' '+t.notes+' '+(t.antennaType||'')+' '+statusLabel(t.status)).includes(tq)).sort((a,b)=>a.tag.localeCompare(b.tag,'en',{numeric:true}));
 $('tankList').innerHTML=tanks.length?tanks.map(t=>`<div class="item"><div class="itemtop"><h3 class="tag">${safe(t.tag)}</h3><span class="muted">${safe(t.type||'')}</span></div><p class="muted">${safe(t.location||'بدون محل')}</p><p><b>وضعیت:</b> <span class="status-badge ${statusClass(t.status)}">${safe(statusLabel(t.status))}</span></p>${t.equipment?`<p><b>تجهیزات:</b> ${safe(t.equipment)}</p>`:''}${t.antennaType?`<p><b>نوع آنتن:</b> ${safe(t.antennaType)}</p>`:''}${tankTechHtml(t)}${t.notes?`<p>${safe(t.notes)}</p>`:''}<div class="actions"><button class="secondary" data-edit-tank="${safe(t.id)}">ویرایش</button><button class="secondary" data-add-record="${safe(t.id)}">ثبت سابقه</button><button class="secondary" data-open-tank-report="${safe(t.id)}">شناسنامه و سوابق</button><button class="danger" data-del-tank="${safe(t.id)}">حذف</button></div></div>`).join(''):'<p class="muted">هنوز مخزنی ثبت نشده است.</p>';
-const rq=($('recordSearch')?.value||'').toLowerCase();
+const rq=normalizeSearchText($('recordSearch')?.value||'');
 const tankFilter=$('recordTankFilter')?.value||'', typeFilter=$('recordTypeFilter')?.value||'';
 const oldTankFilter=tankFilter, oldTypeFilter=typeFilter;
-$('recordTankFilter').innerHTML='<option value="">همه مخازن</option>'+db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag)).map(t=>`<option value="${safe(t.id)}">${safe(t.tag)}</option>`).join('');
+$('recordTankFilter').innerHTML='<option value="">همه مخازن</option>'+db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag,'en',{numeric:true})).map(t=>`<option value="${safe(t.id)}">${safe(t.tag)}</option>`).join('');
 $('recordTankFilter').value=oldTankFilter;
 const types=['خرابی','تعمیرات','تعویض کارت','تغییر تنظیمات','کالیبراسیون','تست عملکرد','تحویل به بهره‌برداری'];
 $('recordTypeFilter').innerHTML='<option value="">همه انواع سوابق</option>'+types.map(t=>`<option value="${safe(t)}">${safe(t)}</option>`).join('');
 $('recordTypeFilter').value=oldTypeFilter;
-const recs=db.records.filter(r=>(!tankFilter||r.tankId===tankFilter)&&(!typeFilter||r.type===typeFilter)&&(tankName(r.tankId)+' '+r.tag+' '+r.title+' '+r.text+' '+r.date+' '+(r.type||'')).toLowerCase().includes(rq)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+const recs=db.records.filter(r=>(!tankFilter||r.tankId===tankFilter)&&(!typeFilter||r.type===typeFilter)&&normalizeSearchText(tankName(r.tankId)+' '+r.tag+' '+r.title+' '+r.text+' '+formatDate(r.date)+' '+r.date+' '+(r.type||'')).includes(rq)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 const recHtml=r=>`<div class="item"><div class="itemtop"><h3>${safe(r.title)}</h3><span class="tag">${safe(r.tag||'بدون تگ')}</span></div><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))}</p><p><b>نوع سابقه:</b> ${safe(r.type||'دسته‌بندی نشده')}</p><p>${safe(r.text||'بدون شرح تکمیلی')}</p><div class="actions"><button class="secondary" data-edit-record="${safe(r.id)}">ویرایش</button><button class="danger" data-del-record="${safe(r.id)}">حذف</button></div></div>`;
 $('recordList').innerHTML=recs.length?recs.map(recHtml).join(''):'<p class="muted">سابقه‌ای مطابق فیلترها یا جست‌وجو پیدا نشد.</p>';
 $('recent').innerHTML=db.records.length?db.records.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4).map(r=>`<button type="button" class="item recent-link" data-open-record="${safe(r.id)}" style="display:block;width:100%;text-align:right;color:inherit;font:inherit"><b>${safe(r.title)}</b><p class="muted">${safe(tankName(r.tankId))} · ${safe(formatDate(r.date))} · ${safe(r.type||'دسته‌بندی نشده')}</p><p>${safe(r.text||'')}</p><span class="muted">برای مشاهده سابقه بزنید ←</span></button>`).join(''):'<p class="muted">برای شروع، یک مخزن ثبت کنید و سپس سابقه فنی اضافه کنید.</p>';
 renderTankReports();
 renderEquipmentTags();
-$('storageStatus').textContent=`${db.tanks.length} مخزن و ${db.records.length} سابقه در حافظه محلی این مرورگر ثبت شده است. این داده‌ها به‌صورت خودکار با دستگاه دیگری همگام نمی‌شوند.`;
+{const age=backupAgeDays();$('storageStatus').textContent=`${db.tanks.length} مخزن و ${db.records.length} سابقه در حافظه محلی این مرورگر ثبت شده است. این داده‌ها با دستگاه دیگر همگام نمی‌شوند. آخرین بکاپ: ${age===null?'هرگز':age===0?'امروز':toFaDigits(age)+' روز پیش'}.`;const w=$('backupWarn');if(w){const show=(age===null||age>14)&&(db.tanks.length||db.records.length);w.classList.toggle('hidden',!show);w.textContent=age===null?'هنوز از اطلاعات بکاپ نگرفته‌اید. از تب «پشتیبان» یک خروجی JSON ذخیره کنید.':`آخرین بکاپ ${toFaDigits(age)} روز پیش بوده است. یک خروجی JSON جدید ذخیره کنید.`}}
 renderGlobalSearch();
 }
 $('tankForm').addEventListener('submit',e=>{e.preventDefault();const id=$('tankId').value||uid();const item={id,tag:$('tankTag').value.trim().toUpperCase(),type:$('tankType').value.trim(),location:$('tankLocation').value.trim(),status:$('tankStatus').value,antennaType:$('antennaType').value,upperReferencePosition:$('upperReferencePosition').value.trim(),tankBottomPosition:$('tankBottomPosition').value.trim(),maximumSafeFill:$('maximumSafeFill').value.trim(),offsetToRoof:$('offsetToRoof').value.trim(),nozzleLength:$('nozzleLength').value.trim(),stillingWellDiameter:$('stillingWellDiameter').value.trim(),referenceInnage:$('referenceInnage').value.trim(),referenceUllage:$('referenceUllage').value.trim(),acceptReference:$('acceptReference').value,acceptReferenceStatus:$('acceptReferenceStatus').value.trim(),equipment:$('tankEquipment').value.trim(),notes:$('tankNotes').value.trim()};if(!item.tag)return;if(db.tanks.some(t=>t.tag.toLowerCase()===item.tag.toLowerCase()&&t.id!==id)){alert('این تگ مخزن قبلاً ثبت شده است.');return}const i=db.tanks.findIndex(t=>t.id===id);if(i>=0)db.tanks[i]=item;else db.tanks.push(item);$('tankForm').reset();$('tankId').value='';$('cancelTank').classList.add('hidden');save()});
@@ -362,9 +373,9 @@ if(b.dataset.openTankReport){reportTankId=b.dataset.openTankReport;selectedRepor
 if(b.dataset.openRecord){const rid=b.dataset.openRecord;tab('records');setTimeout(()=>{const el=[...document.querySelectorAll('#recordList .item')].find(x=>x.querySelector(`[data-edit-record="${rid}"]`));if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='3px solid #72bfff';setTimeout(()=>el.style.outline='',2200)}},50);return}
 if(b.dataset.editTank){const t=db.tanks.find(x=>x.id===b.dataset.editTank);if(!t)return;tab('tanks');$('tankId').value=t.id;$('tankTag').value=t.tag;$('tankType').value=t.type||'';$('tankLocation').value=t.location||'';$('tankStatus').value=t.status||'';$('antennaType').value=t.antennaType||'Free Space';syncAntennaFields();$('upperReferencePosition').value=t.upperReferencePosition||'';$('tankBottomPosition').value=t.tankBottomPosition||'';$('maximumSafeFill').value=t.maximumSafeFill||'';$('offsetToRoof').value=t.offsetToRoof||'';$('nozzleLength').value=t.nozzleLength||'';$('stillingWellDiameter').value=t.stillingWellDiameter||'';$('referenceInnage').value=t.referenceInnage||'';$('referenceUllage').value=t.referenceUllage||'';$('acceptReference').value=t.acceptReference||'';$('acceptReferenceStatus').value=t.acceptReferenceStatus||'';$('tankEquipment').value=t.equipment||'';$('tankNotes').value=t.notes||'';$('cancelTank').classList.remove('hidden');setTimeout(()=>$('tankForm').scrollIntoView({behavior:'smooth',block:'start'}),60)}
 if(b.dataset.addRecord){tab('records');$('recordTank').value=b.dataset.addRecord;populateRecordTagOptions();window.scrollTo(0,0)}
-if(b.dataset.delTank){const t=db.tanks.find(x=>x.id===b.dataset.delTank);if(t&&confirm(`مخزن ${t.tag} حذف شود؟ سوابق وابسته هم حذف می‌شوند.`)){db.tanks=db.tanks.filter(x=>x.id!==t.id);db.records=db.records.filter(x=>x.tankId!==t.id);save()}}
+if(b.dataset.delTank){const t=db.tanks.find(x=>x.id===b.dataset.delTank);if(t&&confirm(`مخزن ${t.tag} حذف شود؟ سوابق وابسته هم حذف می‌شوند.`)){snapshot();db.tanks=db.tanks.filter(x=>x.id!==t.id);db.records=db.records.filter(x=>x.tankId!==t.id);save()}}
 if(b.dataset.editRecord){const r=db.records.find(x=>x.id===b.dataset.editRecord);if(!r)return;tab('records');$('recordId').value=r.id;$('recordTank').value=r.tankId;populateRecordTagOptions(r.tag||'');$('recordDate').value=formatDate(r.date);$('recordTag').value=r.tag;$('recordType').value=r.type||'';$('recordTitle').value=r.title;$('recordText').value=r.text;$('cancelRecord').classList.remove('hidden');window.scrollTo(0,0)}
-if(b.dataset.delRecord){if(confirm('این سابقه حذف شود؟')){db.records=db.records.filter(x=>x.id!==b.dataset.delRecord);save()}}
+if(b.dataset.delRecord){if(confirm('این سابقه حذف شود؟')){snapshot();db.records=db.records.filter(x=>x.id!==b.dataset.delRecord);save()}}
 });
 async function deliverFile(name,blob){
   try{
@@ -373,13 +384,13 @@ async function deliverFile(name,blob){
   }catch(err){if(err&&err.name==='AbortError')return false;}
   try{const url=URL.createObjectURL(blob);const w=window.open(url,'_blank');if(!w){const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();}setTimeout(()=>URL.revokeObjectURL(url),60000);return true;}catch(err){alert('ساخت فایل انجام شد، اما مرورگر نتوانست آن را باز کند. برنامه را در Safari باز کنید و دوباره امتحان کنید.');return false}
 }
-$('exportJson').onclick=()=>deliverFile('TankLog-backup-'+dateForFilename()+'.json',new Blob([JSON.stringify(db,null,2)],{type:'application/json;charset=utf-8'}));
+$('exportJson').onclick=async()=>{const ok=await deliverFile('TankLog-backup-'+dateForFilename()+'.json',new Blob([JSON.stringify(db,null,2)],{type:'application/json;charset=utf-8'}));if(ok)markBackup()};
 function excelXml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
 function xlsxCol(n){let s='';while(n){let r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26)}return s}
 function xlsxSheetXml(rows,widths){const cols=widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('');const body=rows.map((row,ri)=>`<row r="${ri+1}"${ri===0?' ht="28" customHeight="1"':''}>${row.map((v,ci)=>{let style=ri===0?1:(ri===1?2:3);return `<c r="${xlsxCol(ci+1)}${ri+1}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${excelXml(v)}</t></is></c>`}).join('')}</row>`).join('');return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${body}</sheetData><autoFilter ref="A2:${xlsxCol(Math.max(1,widths.length))}${Math.max(2,rows.length)}"/></worksheet>`}
 function makeZip(files){const enc=new TextEncoder(),out=[],central=[];let offset=0;const crcTable=(()=>{let t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();const crc32=b=>{let c=0xffffffff;for(const x of b)c=crcTable[(c^x)&255]^(c>>>8);return (c^0xffffffff)>>>0};const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];for(const [name,content] of files){const nb=enc.encode(name),data=typeof content==='string'?enc.encode(content):content,crc=crc32(data),local=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(nb.length),...u16(0),...nb,...data]);out.push(local);central.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset),...nb]));offset+=local.length}const csize=central.reduce((a,b)=>a+b.length,0),end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(central.length),...u16(central.length),...u32(csize),...u32(offset),...u16(0)]);return new Blob([...out,...central,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})}
 $('exportCsv').onclick=()=>{
- const tanks=db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag));const sheetNames=[],used=new Set();const uniqueName=raw=>{let b=String(raw||'Tank').replace(/[\\/?*\[\]:]/g,'-').trim().slice(0,31)||'Tank',n=b,i=2;while(used.has(n.toLowerCase())){let s='_'+i++;n=b.slice(0,31-s.length)+s}used.add(n.toLowerCase());return n};
+ const tanks=db.tanks.slice().sort((a,b)=>a.tag.localeCompare(b.tag,'en',{numeric:true}));const sheetNames=[],used=new Set();const uniqueName=raw=>{let b=String(raw||'Tank').replace(/[\\/?*\[\]:]/g,'-').trim().slice(0,31)||'Tank',n=b,i=2;while(used.has(n.toLowerCase())){let s='_'+i++;n=b.slice(0,31-s.length)+s}used.add(n.toLowerCase());return n};
  const sheets=[];const add=(name,rows,widths)=>{sheetNames.push(uniqueName(name));sheets.push({name:sheetNames[sheetNames.length-1],xml:xlsxSheetXml(rows,widths)})};
  add('فهرست',[['دفتر سوابق فنی مخازن','تعداد'],['تعداد مخازن',String(db.tanks.length)],['تعداد کل سوابق',String(db.records.length)],['در سرویس',String(db.tanks.filter(t=>t.status==='in_service').length)],['در حال کالیبره و تعمیرات',String(db.tanks.filter(t=>t.status==='calibration_maintenance').length)],['خارج از سرویس',String(db.tanks.filter(t=>t.status==='out_of_service').length)],['وضعیت تعیین‌نشده',String(db.tanks.filter(t=>!STATUS_LABELS[t.status]).length)],['تاریخ خروجی',formatDate(dateToday())],['توضیح','هر مخزن برگه جداگانه دارد؛ مشخصات در بالا و سوابق در ادامه است.']],[38,55]);
  add('همه سوابق',[['همه سوابق فنی'],['مخزن','وضعیت مخزن','تاریخ شمسی','تگ تجهیز','نوع سابقه','عنوان سابقه','شرح کار'],...db.records.slice().sort((a,b)=>tankName(a.tankId).localeCompare(tankName(b.tankId))||(a.date||'').localeCompare(b.date||'')).map(r=>[tankName(r.tankId),statusLabel(db.tanks.find(t=>t.id===r.tankId)?.status),formatDate(r.date),r.tag||'',r.type||'دسته‌بندی نشده',r.title||'',r.text||''])],[20,28,16,20,24,32,65]);
@@ -397,8 +408,10 @@ $('printFullTankReport').addEventListener('click',printFullTankReport);
 $('reportSelectAll').onclick=()=>{const ids=[...document.querySelectorAll('[data-report-check]')].map(x=>x.dataset.reportCheck);ids.forEach(id=>selectedReportIds.add(id));renderTankReports()};
 $('reportClearSelection').onclick=()=>{selectedReportIds.clear();renderTankReports()};
 $('tankReportRecords').addEventListener('change',e=>{const id=e.target?.dataset?.reportCheck;if(!id)return;if(e.target.checked)selectedReportIds.add(id);else selectedReportIds.delete(id);renderTankReports()});
-$('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!Array.isArray(x.tanks)||!Array.isArray(x.records))throw Error();if(confirm('اطلاعات فعلی با محتوای فایل جایگزین شود؟')){db=x;save();alert('بازیابی انجام شد.')}}catch(err){alert('فایل پشتیبان معتبر نیست.')}e.target.value=''});
-$('clearAll').onclick=()=>{if(confirm('همه مخازن و سوابق حذف شوند؟ این کار قابل برگشت نیست.')){db={tanks:[],records:[]};save()}};
+$('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!Array.isArray(x.tanks)||!Array.isArray(x.records))throw Error();if(x.tanks.some(t=>!t||!t.id||!t.tag)||x.records.some(r=>!r||!r.id||!r.tankId))throw Error();snapshot();if(confirm('ادغام با اطلاعات فعلی؟\nتأیید = فقط موارد جدید اضافه می‌شود (پیشنهادی)\nانصراف = گزینه جایگزینی کامل')){const [at,ar]=mergeDb(x);if(save())alert(`ادغام انجام شد: ${at} مخزن و ${ar} سابقه جدید اضافه شد.`)}else if(confirm('همه اطلاعات فعلی با محتوای فایل جایگزین شود؟')){db=x;if(save())alert('بازیابی انجام شد.')}}catch(err){alert('فایل پشتیبان معتبر نیست.')}e.target.value=''});
+$('clearAll').onclick=()=>{if(confirm('همه مخازن و سوابق حذف شوند؟ این کار قابل برگشت نیست.')){snapshot();db={tanks:[],records:[]};save()}};
+$('undoLast').onclick=()=>{try{const p=JSON.parse(localStorage.getItem(SNAP)||'null');if(!p||!p.db)return alert('حالت قبلی ذخیره نشده است.');if(confirm('بازگشت به حالت پیش از آخرین حذف/بازیابی؟')){db=p.db;save()}}catch(e){alert('بازگشت ممکن نشد.')}};
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 load();$('recordDate').value=formatDate(dateToday());render();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
 })();
